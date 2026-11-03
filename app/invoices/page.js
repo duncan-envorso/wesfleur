@@ -59,7 +59,7 @@ export default function Invoices() {
     setBusy(label); setErr(""); setMsg("");
     try {
       const r = await api("/api/invoices", "POST", { action, period });
-      setMsg(action === "prepare"
+      setMsg(action === "refresh-all" ? `Rebuilt ${r.refreshed} draft${r.refreshed === 1 ? "" : "s"} from the latest readings and City bill. Lines you added were kept.` : action === "prepare"
         ? `${r.created} draft${r.created === 1 ? "" : "s"} prepared${r.skipped ? ` (${r.skipped} tenant${r.skipped === 1 ? "" : "s"} already invoiced)` : ""}.`
         : `Issued ${r.issued.length}: ${r.issued.join(", ") || "none"}.`);
       await load();
@@ -83,6 +83,10 @@ export default function Invoices() {
       <div className="bar">
         <label>Billing month<input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} /></label>
         <button onClick={() => act("prepare", "Preparing…")} disabled={!!busy}>{busy === "Preparing…" ? busy : "Prepare drafts"}</button>
+        <button className="ghost" onClick={() => act("refresh-all", "Rebuilding…")} disabled={!!busy || !drafts.length}
+          title="Use after entering or correcting meter readings or the City bill">
+          {busy === "Rebuilding…" ? busy : "Rebuild all drafts"}
+        </button>
         <button className={confirmAll ? "danger" : "ghost"} disabled={!!busy || !drafts.length}
           onClick={() => { if (!confirmAll) { setConfirmAll(true); return; } setConfirmAll(false); act("issue-all", "Issuing…"); }}>
           {busy === "Issuing…" ? busy : confirmAll

@@ -13,6 +13,7 @@ export const dateZA = (iso) => {
 export async function api(url, method = "GET", body) {
   const r = await fetch(url, {
     method,
+    cache: "no-store",
     headers: body ? { "content-type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });

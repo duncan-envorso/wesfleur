@@ -26,11 +26,17 @@ export default function Report() {
   const reload = () => setTick((t) => t + 1);
 
   useEffect(() => {
-    fetch(`/api/readings?period=${period}`).then(async (r) => {
+    fetch(`/api/readings?period=${period}`, { cache: "no-store" }).then(async (r) => {
       const j = await r.json();
       if (!r.ok) setError(j.error); else { setError(""); setData(j); }
     });
   }, [period, tick]);
+  useEffect(() => {
+    const again = () => document.visibilityState === "visible" && setTick((t) => t + 1);
+    window.addEventListener("focus", again);
+    document.addEventListener("visibilitychange", again);
+    return () => { window.removeEventListener("focus", again); document.removeEventListener("visibilitychange", again); };
+  }, []);
 
   function download() {
     const blob = new Blob([toCsv(data)], { type: "text/csv" });

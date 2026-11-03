@@ -140,13 +140,18 @@ export default function Capture() {
 
   const load = useCallback(async () => {
     setError("");
-    const r = await fetch(`/api/readings?period=${period}`);
+    const r = await fetch(`/api/readings?period=${period}`, { cache: "no-store" });
     const j = await r.json();
     if (!r.ok) return setError(j.error);
     setData(j);
   }, [period]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const again = () => document.visibilityState === "visible" && load();
+    window.addEventListener("focus", again);
+    return () => window.removeEventListener("focus", again);
+  }, [load]);
   useEffect(() => {
     fetch("/api/read-photo").then((r) => r.json()).then((j) => setAi(j.enabled)).catch(() => {});
     try { setReadBy(localStorage.getItem("readBy") || ""); } catch {}

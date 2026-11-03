@@ -23,7 +23,7 @@ export default function CityBill({ period, onSaved }) {
   const set = (k, x) => setV((o) => ({ ...o, [k]: x }));
   async function save() {
     setMsg("");
-    try { const r = await api("/api/city-bill", "PUT", { ...v, period }); setD(r); setOpen(false); setMsg("Saved — use “Rebuild” on drafts already prepared"); onSaved?.(); }
+    try { const r = await api("/api/city-bill", "PUT", { ...v, period }); setD(r); setOpen(false); setMsg("Saved — tap “Rebuild all drafts” if drafts were already prepared"); onSaved?.(); }
     catch (e) { setMsg(e.message); }
   }
   if (!d) return null;

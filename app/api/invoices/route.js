@@ -1,5 +1,5 @@
 import { currentUser, handle } from "@/lib/api";
-import { balances, getBilling, issueAll, listInvoices, nextNumberPreview, prepareDrafts } from "@/lib/billing";
+import { balances, getBilling, issueAll, listInvoices, nextNumberPreview, prepareDrafts, refreshAllDrafts } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,7 @@ export const POST = handle(async (req) => {
   const { action, period } = await req.json();
   const user = await currentUser();
   if (action === "prepare") return prepareDrafts(period, user);
+  if (action === "refresh-all") return refreshAllDrafts(period);
   if (action === "issue-all") return { issued: await issueAll(period, user) };
   throw new Error("Unknown action");
 });

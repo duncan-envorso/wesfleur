@@ -25,7 +25,9 @@ export async function proxy(req) {
     url.search = "";
     return NextResponse.redirect(url);
   }
-  return NextResponse.next();
+  const res = NextResponse.next();
+  if (isApi) res.headers.set("cache-control", "no-store");
+  return res;
 }
 
 export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"] };

@@ -10,12 +10,14 @@ export default function CityBill({ period, onSaved }) {
   const [v, setV] = useState(EMPTY);
   const [msg, setMsg] = useState("");
   const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
     setMsg("");
     api(`/api/city-bill?period=${period}`).then((r) => {
       setD(r);
       setV(r.bill ? Object.fromEntries(Object.keys(EMPTY).map((k) => [k, r.bill[k] ?? ""])) : EMPTY);
+      setItems((r.items.length ? r.items : r.suggested).map((i) => ({ ...i, usage: i.usage ?? "", amount: i.amount ?? "", usage_period: i.usage_period ?? "" })));
       setOpen(!r.bill);
     }).catch((e) => setMsg(e.message));
   }, [period]);
@@ -23,7 +25,7 @@ export default function CityBill({ period, onSaved }) {
   const set = (k, x) => setV((o) => ({ ...o, [k]: x }));
   async function save() {
     setMsg("");
-    try { const r = await api("/api/city-bill", "PUT", { ...v, period }); setD(r); setOpen(false); setMsg("Saved — tap “Rebuild all drafts” if drafts were already prepared"); onSaved?.(); }
+    try { const r = await api("/api/city-bill", "PUT", { ...v, period, items }); setD(r); setOpen(false); setMsg("Saved — tap “Rebuild all drafts” if drafts were already prepared"); onSaved?.(); }
     catch (e) { setMsg(e.message); }
   }
   if (!d) return null;
@@ -34,6 +36,15 @@ export default function CityBill({ period, onSaved }) {
         <h2>City bill for this month</h2>
         {b ? <span className="pill ok">Entered</span> : <span className="pill warn">Not entered</span>}
       </div>
+      {!open && d.items.length > 0 && (
+        <table className="tight">
+          <thead><tr><th>Tenant meter on the City account</th><th className="num">Use</th><th className="num">City amount excl VAT</th></tr></thead>
+          <tbody>{d.items.map((i) => (
+            <tr key={i.id}><td>{d.units.find((u) => u.code === i.unit_code)?.name || i.unit_code} – {i.service} meter {i.meter_no} {i.usage_period ? `(${i.usage_period})` : ""}</td>
+              <td className="num">{i.usage ? `${Number(i.usage).toLocaleString("en-ZA")} ${i.usage_unit || ""}` : ""}</td><td className="num">{R(i.amount)}</td></tr>
+          ))}</tbody>
+        </table>
+      )}
       {b && !open && (
         <div className="facts">
           <div><span className="meta">Fixed water</span><b>{R(b.water_fixed)}</b></div>
@@ -56,6 +67,29 @@ export default function CityBill({ period, onSaved }) {
             <label>Refuse charge (R)<input inputMode="decimal" value={v.refuse} onChange={(e) => set("refuse", e.target.value)} placeholder="442.60" /></label>
             <label>Centre water used (kL)<input inputMode="decimal" value={v.water_kl} onChange={(e) => set("water_kl", e.target.value)} placeholder="110" />
               <span className="hint">Optional — checks the shop meters add up</span></label>
+            <div className="wide">
+              <h3>Tenant meters on the City account</h3>
+              <p className="meta">Meters the City bills on your account that serve one tenant only, e.g. Visfabriek&apos;s electricity in Shop 3 (meter 74861). Enter the meter&apos;s total from the bill excluding VAT, including its service charge. It&apos;s passed on at cost.</p>
+              <table className="lines">
+                <thead><tr><th>Unit</th><th>Service</th><th>Meter no.</th><th className="num">Use</th><th>Period</th><th className="num">Amount excl VAT</th><th></th></tr></thead>
+                <tbody>{items.map((it, i) => {
+                  const up = (k, x) => setItems((ls) => ls.map((l, j) => (j === i ? { ...l, [k]: x } : l)));
+                  return (
+                    <tr key={i}>
+                      <td><select value={it.unit_code || ""} onChange={(e) => up("unit_code", e.target.value)}>
+                        <option value="">Choose…</option>{d.units.map((u) => <option key={u.code} value={u.code}>{u.name}</option>)}</select></td>
+                      <td><select value={it.service} onChange={(e) => up("service", e.target.value)}><option value="electricity">Electricity</option><option value="water">Water</option></select></td>
+                      <td><input value={it.meter_no || ""} onChange={(e) => up("meter_no", e.target.value)} placeholder="74861" /></td>
+                      <td className="num"><input className="n" inputMode="decimal" value={it.usage} onChange={(e) => up("usage", e.target.value)} placeholder="9853" /></td>
+                      <td><input value={it.usage_period} onChange={(e) => up("usage_period", e.target.value)} placeholder="16 Sep – 15 Oct 2026" /></td>
+                      <td className="num"><input className="n" inputMode="decimal" value={it.amount} onChange={(e) => up("amount", e.target.value)} placeholder="33177.91" /></td>
+                      <td><button className="linkish" onClick={() => setItems((ls) => ls.filter((_, j) => j !== i))} aria-label="Remove">×</button></td>
+                    </tr>
+                  );
+                })}</tbody>
+              </table>
+              <button className="ghost small-btn" style={{ marginTop: 6 }} onClick={() => setItems((ls) => [...ls, { unit_code: "3", service: "electricity", meter_no: "", usage: "", usage_unit: "kWh", usage_period: "", amount: "" }])}>+ Add tenant meter</button>
+            </div>
             <label className="wide">Notes<input value={v.notes} onChange={(e) => set("notes", e.target.value)} placeholder="e.g. bill 240010083074, water period 19 Sep – 19 Oct" /></label>
           </div>
         </>

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { calculate, money, parseReading, prevPeriod } from "@/lib/calc";
 import { compressImage } from "@/lib/image";
+import { Problem, postReading } from "./reading-editor";
 
 const thisMonth = () => new Date().toISOString().slice(0, 7);
 const fmt = (n, d = 4) => (n === null || n === undefined ? "—" : Number(n).toLocaleString("en-ZA", { minimumFractionDigits: d, maximumFractionDigits: d }));
@@ -14,6 +15,7 @@ function MeterCard({ m, period, tariffs, aiEnabled, readBy, onSaved }) {
   const [preview, setPreview] = useState(m.photo_url || null);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [problem, setProblem] = useState(null);
 
   const current = parseReading(value);
   const previous = m.previous ?? (opening ? parseReading(opening) : null);
@@ -50,29 +52,18 @@ function MeterCard({ m, period, tariffs, aiEnabled, readBy, onSaved }) {
     }
   }
 
-  async function save() {
+  async function save(reading = value, confirm = false) {
     setError("");
-    if (!Number.isFinite(current)) return setError("Enter the reading, e.g. 0247,5018");
+    if (!Number.isFinite(parseReading(reading))) return setError("Enter the reading, e.g. 0247,5018");
     setBusy("Saving…");
     try {
       if (m.previous === null && opening) {
-        const o = new FormData();
-        o.append("meter_id", m.id);
-        o.append("period", prevPeriod(period));
-        o.append("reading", opening);
-        o.append("note", "Opening reading entered manually");
-        const r0 = await fetch("/api/readings", { method: "POST", body: o });
-        if (!r0.ok) throw new Error((await r0.json()).error);
+        const r0 = await postReading({ meter_id: m.id, period: prevPeriod(period), reading: opening, note: "Opening reading entered manually" }, true);
+        if (r0.problem) throw new Error(r0.problem.error);
       }
-      const fd = new FormData();
-      fd.append("meter_id", m.id);
-      fd.append("period", period);
-      fd.append("reading", value);
-      fd.append("note", note);
-      if (readBy) fd.append("read_by", readBy);
-      if (photo) fd.append("photo", photo);
-      const r = await fetch("/api/readings", { method: "POST", body: fd });
-      if (!r.ok) throw new Error((await r.json()).error);
+      const res = await postReading({ meter_id: m.id, period, reading, note, read_by: readBy, photo }, confirm);
+      if (res.problem) { setValue(reading); setProblem(res.problem); return; }
+      setProblem(null);
       setPhoto(null);
       onSaved();
     } catch (e) {
@@ -111,7 +102,7 @@ function MeterCard({ m, period, tariffs, aiEnabled, readBy, onSaved }) {
       </label>
 
       <label>This month&apos;s reading ({unit})
-        <input className="big" inputMode="decimal" placeholder="0247,5018" value={value} onChange={(e) => setValue(e.target.value)} />
+        <input className="big" inputMode="decimal" placeholder="0247,5018" value={value} onChange={(e) => { setValue(e.target.value); setProblem(null); }} />
       </label>
       {aiEnabled && photo && <button className="ghost" onClick={() => readPhoto()} disabled={!!busy}>Read from photo</button>}
 
@@ -129,8 +120,9 @@ function MeterCard({ m, period, tariffs, aiEnabled, readBy, onSaved }) {
       <label>Note
         <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. leak at tap, meter dial dirty" />
       </label>
+      <Problem problem={problem} busy={!!busy} onUse={(sug) => save(sug)} onForce={() => save(value, true)} />
       {error && <div className="err">{error}</div>}
-      <button onClick={save} disabled={!!busy}>{busy || (m.current !== null ? "Update reading" : "Save reading")}</button>
+      <button onClick={() => save()} disabled={!!busy}>{busy || (m.current !== null ? "Update reading" : "Save reading")}</button>
     </div>
   );
 }

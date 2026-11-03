@@ -1,6 +1,6 @@
 import { put } from "@vercel/blob";
 import { db } from "@/lib/db";
-import { parseReading } from "@/lib/calc";
+import { checkReading, parseReading } from "@/lib/calc";
 import { buildReport } from "@/lib/report";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +25,19 @@ export async function POST(req) {
     const reading = parseReading(form.get("reading"));
     if (!meterId || !/^\d{4}-\d{2}$/.test(period)) return Response.json({ error: "meter and period required" }, { status: 400 });
     if (!Number.isFinite(reading)) return Response.json({ error: "Enter the reading as a number, e.g. 0247,5018" }, { status: 400 });
+
+    // Catch typos (e.g. a missing comma) before they are saved.
+    if (form.get("confirm") !== "1") {
+      const [meter] = await q`SELECT type FROM meters WHERE id = ${meterId}`;
+      const [prev] = await q`SELECT reading, period FROM readings WHERE meter_id = ${meterId} AND period < ${period} ORDER BY period DESC LIMIT 1`;
+      const [next] = await q`SELECT reading, period FROM readings WHERE meter_id = ${meterId} AND period > ${period} ORDER BY period ASC LIMIT 1`;
+      const problem = checkReading({
+        type: meter?.type, input: form.get("reading"), reading,
+        previous: prev ? Number(prev.reading) : null, previousPeriod: prev?.period,
+        next: next ? Number(next.reading) : null, nextPeriod: next?.period,
+      });
+      if (problem) return Response.json({ ...problem, needsConfirm: true }, { status: 409 });
+    }
 
     let photoUrl = null;
     const photo = form.get("photo");

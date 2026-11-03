@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server";
+import { COOKIE, verifyToken } from "./lib/session";
 
-// Basic-auth login for the whole app. Set APP_USERNAME and APP_PASSWORD in Vercel.
-export function proxy(req) {
-  const user = process.env.APP_USERNAME || "westfleur";
-  const pass = process.env.APP_PASSWORD;
-  if (!pass) {
-    return new NextResponse("Set APP_PASSWORD in the Vercel environment variables.", { status: 500 });
+const PUBLIC = ["/login", "/api/login"];
+
+export async function proxy(req) {
+  const { pathname, search } = req.nextUrl;
+  if (PUBLIC.includes(pathname)) return NextResponse.next();
+
+  const user = await verifyToken(req.cookies.get(COOKIE)?.value);
+  if (user) return NextResponse.next();
+
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Signed out — please log in again" }, { status: 401 });
   }
-  const header = req.headers.get("authorization") || "";
-  if (header.startsWith("Basic ")) {
-    const [u, p] = atob(header.slice(6)).split(":");
-    if (u === user && p === pass) return NextResponse.next();
-  }
-  return new NextResponse("Login required", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Westfleur meters"' },
-  });
+  const url = req.nextUrl.clone();
+  url.pathname = "/login";
+  url.search = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname + search)}`;
+  return NextResponse.redirect(url);
 }
 
 export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"] };

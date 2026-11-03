@@ -8,6 +8,16 @@ instead of landing on a tenant's invoice.
 
 ## What it does
 
+- **Tenants** — one record per tenant: legal and trading name, registration and VAT numbers,
+  contacts, surety; each lease with unit, status, dates, rent, escalation rate and increase date,
+  deposit required vs held, VAT basis, renewal option and notice date, link to the signed lease.
+  The app works out the next increase and its amount, a year-by-year rent schedule, and flags:
+  expired leases (holdover), leases ending within 180 days, missed increases (with the rent it
+  should be and the estimated under-billing), increases due within 60 days, deposit shortfalls,
+  unsigned or missing leases. Every rent change is kept in a rent history, and each tenant has a
+  dated log for notices, arrears, maintenance, insurance and deposit movements.
+  It starts with the Westfleur tenant roll loaded; unknown facts are left blank and flagged.
+
 - **Capture** — one card per meter: take a photo, type the reading (`0247,5018` or `247.5018`),
   see usage and cost instantly, save. The photo is stored with the reading as evidence.
   For a meter's first month, enter last month's reading as the opening reading.
@@ -34,7 +44,9 @@ Charges: water = kL × water tariff; sewerage = 95% of kL × sewerage tariff; pl
 4. **Add photo storage.** Storage → Create → **Blob** → connect it. This adds `BLOB_READ_WRITE_TOKEN`.
 5. **Set the login.** Settings → Environment Variables:
    - `APP_USERNAME` — e.g. `westfleur`
-   - `APP_PASSWORD` — a strong password
+   - `APP_PASSWORD` — a strong password (no colons)
+   - optional `SESSION_SECRET` — any long random string; changing it (or the password) signs
+     everyone out. Sign-ins otherwise last 30 days per device.
    - optional `ANTHROPIC_API_KEY` (from console.anthropic.com) to enable "Read from photo"
 6. **Redeploy** (Deployments → ⋯ → Redeploy) so the new variables take effect.
 7. Open the URL on your phone, log in, and "Add to Home Screen" for quick access.

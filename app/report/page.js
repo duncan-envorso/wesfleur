@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { money } from "@/lib/calc";
+import { money, prevPeriod } from "@/lib/calc";
+import { EditableReading } from "../reading-editor";
 
 const fmt = (n, d = 3) => (n === null || n === undefined ? "—" : Number(n).toLocaleString("en-ZA", { minimumFractionDigits: d, maximumFractionDigits: d }));
 const lastMonth = () => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 7); };
@@ -21,13 +22,15 @@ export default function Report() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
+  const [tick, setTick] = useState(0);
+  const reload = () => setTick((t) => t + 1);
+
   useEffect(() => {
-    setData(null);
     fetch(`/api/readings?period=${period}`).then(async (r) => {
       const j = await r.json();
       if (!r.ok) setError(j.error); else { setError(""); setData(j); }
     });
-  }, [period]);
+  }, [period, tick]);
 
   function download() {
     const blob = new Blob([toCsv(data)], { type: "text/csv" });
@@ -82,8 +85,8 @@ export default function Report() {
                   <tr key={m.id}>
                     <td>{m.name}{!m.recharge && <div className="meta">not recharged</div>}</td>
                     <td>{m.tenant}{m.note && <div className="meta">{m.note}</div>}</td>
-                    <td className="num">{fmt(m.previous, 4)}<div className="meta">{m.previous_period}</div></td>
-                    <td className="num">{fmt(m.current, 4)}</td>
+                    <td className="num"><EditableReading meterId={m.id} period={m.previous_period || prevPeriod(period)} value={m.previous} label="Previous reading" onSaved={reload} /><div className="meta">{m.previous_period}</div></td>
+                    <td className="num"><EditableReading meterId={m.id} period={period} value={m.current} note={m.note} label="Reading" onSaved={reload} /></td>
                     <td className="num">{fmt(m.calc.usage)} {m.calc.usage !== null && (m.type === "electricity" ? "kWh" : "kL")}
                       {m.calc.warning && <div className="warnbox">{m.calc.warning}</div>}</td>
                     <td className="num">{money(m.calc.lines[0]?.amount)}</td>
@@ -103,7 +106,7 @@ export default function Report() {
           <p className="meta">
             Tariffs: water {money(t.water_per_kl)}/kL, sewerage {money(t.sewer_per_kl)}/kL on {Math.round(t.sewer_pct * 100)}% of water,
             electricity {money(t.electricity_per_kwh)}/kWh, {t.add_vat ? `plus ${Math.round(t.vat_rate * 100)}% VAT` : "excl. VAT"}.
-            Change them under Settings.
+            Change them under Settings. Tap <b>edit</b> next to any reading to correct it; usage and charges recalculate.
           </p>
         </>
       )}

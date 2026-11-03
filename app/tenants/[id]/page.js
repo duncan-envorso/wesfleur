@@ -6,7 +6,8 @@ import { Alerts, Field, LeaseFields, R, StatusPill, api, dateZA, useForm } from 
 
 const EVENT_KINDS = ["Note", "Payment", "Arrears", "Maintenance", "Notice", "Lease", "Deposit", "Insurance", "Termination"];
 const LEASE_KEYS = ["unit_id", "status", "start_date", "end_date", "escalation_pct", "escalation_month", "escalation_day",
-  "deposit_required", "deposit_held", "deposit_date", "vat_basis", "renewal_option", "notice_by", "document_url", "notes"];
+  "deposit_required", "deposit_held", "deposit_date", "vat_basis", "renewal_option", "notice_by", "document_url", "notes",
+  "opex_amount", "opex_escalation_pct"];
 const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k] ?? ""]));
 
 function TenantDetails({ tenant, onSaved }) {
@@ -98,6 +99,8 @@ function LeaseCard({ lease, units, onSaved }) {
           <span className="meta">{s.anchor ? `each ${dateZA(`2000-${String(s.anchor.m).padStart(2, "0")}-${String(s.anchor.d).padStart(2, "0")}`).replace(" 2000", "")}` : "date not set"}</span></div>
         <div><span className="meta">Next increase</span><b>{s.nextDate && !s.nextAfterEnd ? R(s.nextAmount) : "—"}</b>
           <span className="meta">{s.nextDate && !s.nextAfterEnd ? dateZA(s.nextDate) : s.nextAfterEnd ? "lease ends first" : ""}</span></div>
+        <div><span className="meta">Operating costs</span><b>{lease.opex_amount ? R(lease.opex_amount) : "—"}</b>
+          <span className="meta">{lease.opex_amount ? `+${lease.opex_escalation_pct || 0}% a year` : "none on the lease"}</span></div>
         <div><span className="meta">Deposit</span><b>{R(lease.deposit_held)}</b>
           <span className="meta">{lease.deposit_required !== null ? `required ${R(lease.deposit_required)}` : "requirement not recorded"}</span></div>
         <div><span className="meta">VAT</span><b>{{ exclusive: "Exclusive", inclusive: "Inclusive", silent: "Silent" }[lease.vat_basis] || "—"}</b>

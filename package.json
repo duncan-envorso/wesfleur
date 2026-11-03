@@ -11,6 +11,8 @@
     "@neondatabase/serverless": "^1.2.0",
     "@vercel/blob": "^2.8.2",
     "next": "^16.4.4",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8.23.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   }

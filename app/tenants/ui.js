@@ -84,6 +84,8 @@ export function LeaseFields({ v, set, units, includeRent }) {
         </select>
       </Field>
       <Field label="Increase day" name="escalation_day" type="number" value={v.escalation_day} onChange={set} placeholder="1" />
+      <Field label="Operating costs / month (R)" name="opex_amount" type="number" value={v.opex_amount} onChange={set} hint="Billed on every invoice" />
+      <Field label="Operating costs escalation %" name="opex_escalation_pct" type="number" value={v.opex_escalation_pct} onChange={set} hint="Each lease anniversary" />
       <Field label="Deposit required (R)" name="deposit_required" type="number" value={v.deposit_required} onChange={set} />
       <Field label="Deposit held (R)" name="deposit_held" type="number" value={v.deposit_held} onChange={set} />
       <Field label="Deposit received on" name="deposit_date" type="date" value={v.deposit_date} onChange={set} />

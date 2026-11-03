@@ -8,6 +8,17 @@ instead of landing on a tenant's invoice.
 
 ## What it does
 
+- **Invoices** (admins) — each month, "Prepare drafts" builds one invoice per tenant with a current
+  lease: rent at the lease's escalated rate for that month, operating costs, water and sewerage from
+  the meter readings (readings shown on the invoice), electricity from sub-meters, and refuse. Admins
+  review and edit lines (arrears, back-billing, credits), then issue. Issued invoices are numbered in
+  sequence (continuing from INV0000455), locked, and downloadable as PDFs with a statement of account
+  and payment reference. Corrections are made with credit notes (CN numbers). Record payments to keep
+  tenant balances. Until a VAT registration date is set in Settings, documents are titled "Invoice"
+  with no VAT; from that date they become tax invoices with VAT added.
+- **Users** — the APP_USERNAME login is always an admin. Admins can add users in Settings as
+  *admin* or *meter reader*; meter readers can only capture readings.
+
 - **Tenants** — one record per tenant: legal and trading name, registration and VAT numbers,
   contacts, surety; each lease with unit, status, dates, rent, escalation rate and increase date,
   deposit required vs held, VAT basis, renewal option and notice date, link to the signed lease.
@@ -52,6 +63,9 @@ Charges: water = kL × water tariff; sewerage = 95% of kL × sewerage tariff; pl
 7. Open the URL on your phone, log in, and "Add to Home Screen" for quick access.
 
 ## Running locally
+
+To run against a local Postgres instead of Neon, set `LOCAL_DATABASE_URL`
+(e.g. `postgresql://user@localhost:5432/westfleur`).
 
 ```
 npm install

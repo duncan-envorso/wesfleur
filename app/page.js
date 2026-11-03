@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { calculate, money, parseReading, prevPeriod } from "@/lib/calc";
 import { compressImage } from "@/lib/image";
-import { Problem, postReading } from "./reading-editor";
+import { EditableReading, Problem, postReading } from "./reading-editor";
 
 const thisMonth = () => new Date().toISOString().slice(0, 7);
 const fmt = (n, d = 4) => (n === null || n === undefined ? "—" : Number(n).toLocaleString("en-ZA", { minimumFractionDigits: d, maximumFractionDigits: d }));
@@ -86,7 +86,10 @@ function MeterCard({ m, period, tariffs, aiEnabled, readBy, onSaved }) {
       </div>
 
       <div className="meta">
-        Previous: {m.previous !== null ? <b>{fmt(m.previous)} {unit}</b> : "none"} {m.previous_period ? `(${m.previous_period})` : ""}
+        Previous{m.previous_period ? ` (${m.previous_period})` : ""}:{" "}
+        {m.previous !== null
+          ? <b><EditableReading meterId={m.id} period={m.previous_period} value={m.previous} label="Last month's reading" onSaved={onSaved} /> {unit}</b>
+          : "none"}
         {m.previous_photo_url && <> · <a href={m.previous_photo_url} target="_blank">photo</a></>}
       </div>
       {m.previous === null && (

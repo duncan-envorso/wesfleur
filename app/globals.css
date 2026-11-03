@@ -102,3 +102,7 @@ tr.past td { color: var(--muted); }
 .inline-edit { max-width: 300px; }
 .problem { max-width: 300px; }
 .stat > .meta { display: block; }
+@media (max-width: 560px) {
+  .top { flex-wrap: wrap; gap: 6px; padding: 10px 14px; }
+  .top nav { gap: 14px; font-size: 14.5px; flex-wrap: wrap; }
+}

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { R, api, dateZA } from "../tenants/ui";
+import CityBill from "./city-bill";
 
 const thisMonth = () => new Date().toISOString().slice(0, 7);
 const today = () => new Date().toISOString().slice(0, 10);
@@ -94,6 +95,8 @@ export default function Invoices() {
       {msg && <p className="pill ok" style={{ display: "inline-block" }}>{msg}</p>}
       {err && <p className="err">{err}</p>}
       {warnCount > 0 && <p className="warnbox">{warnCount} thing{warnCount === 1 ? "" : "s"} to check on the drafts — open each one marked ⚠ before issuing.</p>}
+
+      <CityBill period={period} onSaved={load} />
 
       <div className="summary">
         <div className="stat"><span className="meta">Drafts</span><b>{drafts.length}</b><span className="meta">{R(drafts.reduce((s, d) => s + d.total, 0))}</span></div>

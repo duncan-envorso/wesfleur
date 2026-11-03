@@ -33,6 +33,17 @@ export function BillingSettings() {
         <label className="wide">Address<textarea rows={3} value={v.address} onChange={(e) => set("address", e.target.value)} /></label>
         <label className="wide">Footer<textarea rows={2} value={v.footer} onChange={(e) => set("footer", e.target.value)} /></label>
       </div>
+      <h3>Splitting City charges</h3>
+      <div className="form-grid">
+        <label>Split fixed charges and refuse over
+          <select value={v.utility_split || "let"} onChange={(e) => set("utility_split", e.target.value)}>
+            <option value="let">Area actually let (as the leases provide)</option>
+            <option value="total">Whole building area — company carries vacant/own-use share</option>
+          </select>
+        </label>
+        <label>Whole building area (m²)<input type="number" value={v.building_area_m2 ?? ""} onChange={(e) => set("building_area_m2", e.target.value)} />
+          <span className="hint">Used only with “whole building”. Past invoices implied 1,327 m².</span></label>
+      </div>
       <h3>VAT</h3>
       <div className="form-grid">
         <label>Registered for VAT from

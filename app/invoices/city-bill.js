@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Fragment, useEffect, useState } from "react";
 import { R, api } from "../tenants/ui";
 
 const EMPTY = { bill_date: "", account_no: "", water_fixed: "", sewer_fixed: "", refuse: "", water_kl: "", rates: "", water_use: "",
@@ -14,6 +15,7 @@ export default function CityBill({ period, onSaved }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [prepaid, setPrepaid] = useState([]);
+  const [openRow, setOpenRow] = useState(null);
 
   useEffect(() => {
     setMsg("");
@@ -156,8 +158,12 @@ export default function CityBill({ period, onSaved }) {
             <thead><tr><th>Service</th><th className="num">City cost</th><th className="num">Recovered</th><th className="num">Gap</th></tr></thead>
             <tbody>
               {d.recovery.rows.filter((r) => r.cost || r.recovered).map((r) => (
-                <tr key={r.key}><td>{r.label}<br /><span className="meta">{r.how}</span></td><td className="num">{R(r.cost)}</td>
-                  <td className="num">{R(r.recovered)}</td><td className="num"><span className={gapCls(r.gap)}>{r.gap > 0 ? "+" : ""}{R(r.gap)}</span></td></tr>
+                <Fragment key={r.key}>
+                  <tr onClick={() => setOpenRow(openRow === r.key ? null : r.key)} style={{ cursor: "pointer" }} aria-expanded={openRow === r.key}>
+                    <td><span aria-hidden="true">{openRow === r.key ? "▾" : "▸"}</span> {r.label}<br /><span className="meta">{r.how}</span></td><td className="num">{R(r.cost)}</td>
+                    <td className="num">{R(r.recovered)}</td><td className="num"><span className={gapCls(r.gap)}>{r.gap > 0 ? "+" : ""}{R(r.gap)}</span></td></tr>
+                  {openRow === r.key && <tr><td colSpan={4}><RowDetail row={r} /></td></tr>}
+                </Fragment>
               ))}
               <tr><td><b>Total</b></td><td className="num"><b>{R(d.recovery.total.cost)}</b></td><td className="num"><b>{R(d.recovery.total.recovered)}</b></td>
                 <td className="num"><b className={gapCls(d.recovery.total.gap)}>{R(d.recovery.total.gap)}</b></td></tr>
@@ -218,5 +224,57 @@ export default function CityBill({ period, onSaved }) {
         </p>
       </details>
     </section>
+  );
+}
+
+// What the City charged for one service, and how each tenant's invoice recovered it.
+function RowDetail({ row }) {
+  const x = row.detail || { city: [], tenants: [] };
+  const w = x.water;
+  return (
+    <div style={{ display: "grid", gap: 10, padding: "6px 0 10px" }}>
+      {x.city.length > 0 && (
+        <table className="tight">
+          <thead><tr><th>City charged</th><th className="num">Incl VAT</th></tr></thead>
+          <tbody>
+            {x.city.map((c, i) => <tr key={i}><td>{c.label}</td><td className="num">{R(c.amount)}</td></tr>)}
+            <tr><td><b>Total</b></td><td className="num"><b>{R(row.cost)}</b></td></tr>
+          </tbody>
+        </table>
+      )}
+      {x.prepaid && <p className="meta">Recovered through Citiq prepaid tokens — see “Prepaid electricity by meter” below.</p>}
+      {x.tenants.length > 0 ? (
+        <table className="tight">
+          <thead><tr><th>Tenant / invoice</th><th>Line</th><th className="num">Use</th><th className="num">Amount</th></tr></thead>
+          <tbody>
+            {x.tenants.map((t) => (
+              <Fragment key={t.invoice_id}>
+                {t.lines.map((l, i) => (
+                  <tr key={i}>
+                    {i === 0 && <td rowSpan={t.lines.length + 1} style={{ verticalAlign: "top" }}>
+                      <b>{t.tenant}</b>{t.unit ? <><br /><span className="meta">{t.unit}</span></> : null}<br />
+                      <Link href={`/invoices/${t.invoice_id}`}>{t.number || "Draft"}</Link>
+                      {t.credit ? <span className="pill"> credit</span> : t.status === "draft" ? <span className="pill warn"> draft</span> : null}</td>}
+                    <td>{l.description}</td>
+                    <td className="num">{l.quantity !== null && l.unit ? `${Number(l.quantity).toLocaleString("en-ZA")} ${l.unit}` : ""}</td>
+                    <td className="num">{R(l.amount)}</td>
+                  </tr>
+                ))}
+                <tr><td className="meta">Subtotal</td><td></td><td className="num"><b>{R(t.total)}</b></td></tr>
+              </Fragment>
+            ))}
+            <tr><td colSpan={3}><b>Recovered from tenants</b></td><td className="num"><b>{R(row.recovered)}</b></td></tr>
+            <tr><td colSpan={3}>{row.gap < 0 ? "Not recovered — carried by the company" : row.gap > 0 ? "Over-recovered — tenants could dispute" : "Difference"}</td>
+              <td className="num"><span className={gapCls(row.gap)}>{row.gap > 0 ? "+" : ""}{R(row.gap)}</span></td></tr>
+          </tbody>
+        </table>
+      ) : !x.prepaid && <p className="meta">Nothing on this month&apos;s invoices for this service.</p>}
+      {w && (
+        <p className={w.unmeteredKl > 0.5 ? "warnbox" : "meta"}>
+          The City measured <b>{w.cityKl} kL</b> on the centre&apos;s main meter; tenant meter lines this month add up to <b>{w.meteredKl} kL</b>.
+          {w.unmeteredKl > 0.5 ? <> The other <b>{w.unmeteredKl} kL</b> (gym, common taps, leaks, unread meters) costs about <b>{R(w.unmeteredCost)}</b> at {R(w.perKl)}/kL incl sewerage.</> : null}
+        </p>
+      )}
+    </div>
   );
 }

@@ -12,6 +12,8 @@ const ICONS = {
   settings: <><circle cx="12" cy="12" r="3" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></>,
   payments: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M16 15h2" /></>,
   expenses: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6M9 16h3" /></>,
+  income: <><path d="M12 19V5M6 11l6-6 6 6" /><path d="M5 21h14" /></>,
+  pnl: <><path d="M4 19h16" /><path d="M6 16l4-5 3 3 5-7" /></>,
   menu: <path d="M4 6h16M4 12h16M4 18h16" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
   logout: <><path d="M10 4H5v16h5" /><path d="M14 8l4 4-4 4M18 12H9" /></>,
@@ -27,7 +29,9 @@ const SECTIONS = [
   { title: "Money", admin: true, items: [
     { href: "/invoices", label: "Invoices", icon: "invoices" },
     { href: "/payments", label: "Payments", icon: "payments" },
+    { href: "/income", label: "Income", icon: "income" },
     { href: "/expenses", label: "Expenses", icon: "expenses" },
+    { href: "/profit-loss", label: "Profit & loss", icon: "pnl" },
   ] },
   { title: "Utilities", items: [
     { href: "/", label: "Meter readings", icon: "meters" },

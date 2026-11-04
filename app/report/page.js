@@ -4,6 +4,18 @@ import { money, prevPeriod } from "@/lib/calc";
 import { EditableReading } from "../reading-editor";
 
 const fmt = (n, d = 3) => (n === null || n === undefined ? "—" : Number(n).toLocaleString("en-ZA", { minimumFractionDigits: d, maximumFractionDigits: d }));
+const sum = (list, f) => list.reduce((s, m) => s + (Number(f(m)) || 0), 0);
+function totalsFor(meters, type) {
+  const list = meters.filter((m) => m.type === type && !m.is_main && m.calc.usage !== null && m.calc.usage >= 0);
+  return {
+    count: list.length,
+    usage: sum(list, (m) => m.calc.usage),
+    first: sum(list, (m) => m.calc.lines[0]?.amount),
+    sewer: sum(list, (m) => m.calc.lines[1]?.amount),
+    total: sum(list, (m) => m.calc.total),
+    recharged: sum(list.filter((m) => m.recharge), (m) => m.calc.total),
+  };
+}
 const lastMonth = () => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 7); };
 
 function toCsv(data) {
@@ -14,6 +26,10 @@ function toCsv(data) {
       m.calc.lines[0]?.amount, m.calc.lines[1]?.amount ?? "", m.calc.total, m.recharge ? "yes" : "no",
       m.read_on ? String(m.read_on).slice(0, 10) : "", m.read_by, m.photo_url, m.note];
   });
+  for (const [type, unit] of [["water", "kL"], ["electricity", "kWh"]]) {
+    const tt = totalsFor(data.meters, type);
+    if (tt.count) rows.push([`Total ${type} (excl. main)`, "", "", type, "", "", "", tt.usage.toFixed(3), unit, tt.first.toFixed(2), type === "water" ? tt.sewer.toFixed(2) : "", tt.total.toFixed(2), "", "", "", "", ""]);
+  }
   return [head, ...rows].map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
 }
 
@@ -107,6 +123,22 @@ export default function Report() {
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                {[["water", "kL", "Total water"], ["electricity", "kWh", "Total electricity"]].map(([type, unit, label]) => {
+                  const tt = totalsFor(data.meters, type);
+                  if (!tt.count) return null;
+                  return (
+                    <tr key={type}>
+                      <td colSpan={4}><b>{label}</b><div className="meta">{tt.count} meter{tt.count === 1 ? "" : "s"} · excludes City main meter{tt.recharged !== tt.total ? ` · ${money(tt.recharged)} recharged to tenants` : ""}</div></td>
+                      <td className="num"><b>{fmt(tt.usage)} {unit}</b></td>
+                      <td className="num"><b>{money(tt.first)}</b></td>
+                      <td className="num"><b>{type === "water" ? money(tt.sewer) : ""}</b></td>
+                      <td className="num"><b>{money(tt.total)}</b></td>
+                      <td></td>
+                    </tr>
+                  );
+                })}
+              </tfoot>
             </table>
           </div>
           <p className="meta">

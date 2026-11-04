@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import { R, api } from "../tenants/ui";
 
-const EMPTY = { bill_date: "", account_no: "", water_fixed: "", sewer_fixed: "", refuse: "", water_kl: "", notes: "" };
+const EMPTY = { bill_date: "", account_no: "", water_fixed: "", sewer_fixed: "", refuse: "", water_kl: "", rates: "", water_use: "",
+  sewer_use: "", bulk_elec: "", bulk_elec_fixed: "", bulk_elec_kwh: "", other_charges: "", notes: "" };
+const gapCls = (g) => (g < -0.5 ? "err" : g > 0.5 ? "warnbox" : "");
 const pct = (x) => (x === null || x === undefined ? "—" : `${(x * 100).toFixed(2)}%`);
 
 export default function CityBill({ period, onSaved }) {
@@ -11,6 +13,7 @@ export default function CityBill({ period, onSaved }) {
   const [msg, setMsg] = useState("");
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
+  const [prepaid, setPrepaid] = useState([]);
 
   useEffect(() => {
     setMsg("");
@@ -23,6 +26,8 @@ export default function CityBill({ period, onSaved }) {
         base.push({ shared: true, unit_code: null, service: g.service, meter_no: g.meter_no, usage: "", usage_unit: "kL", usage_period: "", amount: "" });
       }
       setItems(base);
+      setPrepaid((r.prepaid.length ? r.prepaid : r.prepaidSuggested).map((p) => ({ meter_no: p.meter_no, label: p.label || "", unit_code: p.unit_code || "",
+        kwh: p.kwh ?? "", tokens: p.tokens ?? "", recovery: p.recovery ?? "", statement_period: p.statement_period || "" })));
       setOpen(!r.bill);
     }).catch((e) => setMsg(e.message));
   }, [period]);
@@ -30,7 +35,7 @@ export default function CityBill({ period, onSaved }) {
   const set = (k, x) => setV((o) => ({ ...o, [k]: x }));
   async function save() {
     setMsg("");
-    try { const r = await api("/api/city-bill", "PUT", { ...v, period, items }); setD(r); setOpen(false); setMsg("Saved — tap “Rebuild all drafts” if drafts were already prepared"); onSaved?.(); }
+    try { const r = await api("/api/city-bill", "PUT", { ...v, period, items, prepaid }); setD(r); setOpen(false); setMsg("Saved — tap “Rebuild all drafts” if drafts were already prepared"); onSaved?.(); }
     catch (e) { setMsg(e.message); }
   }
   if (!d) return null;
@@ -73,6 +78,21 @@ export default function CityBill({ period, onSaved }) {
             <label>Centre water used (kL)<input inputMode="decimal" value={v.water_kl} onChange={(e) => set("water_kl", e.target.value)} placeholder="110" />
               <span className="hint">Optional — checks the shop meters add up</span></label>
             <div className="wide">
+              <h3>Rest of the bill</h3>
+              <p className="meta">So the app can compare the whole City account with what you recover. Excluding VAT; rates carry no VAT.</p>
+            </div>
+            <label>Property rates (R)<input inputMode="decimal" value={v.rates} onChange={(e) => set("rates", e.target.value)} placeholder="10118.20" /></label>
+            <label>Water consumption charge (R)<input inputMode="decimal" value={v.water_use} onChange={(e) => set("water_use", e.target.value)} placeholder="4351.60" />
+              <span className="hint">Centre main meter only — not a tenant or shared meter below</span></label>
+            <label>Sewerage disposal charge (R)<input inputMode="decimal" value={v.sewer_use} onChange={(e) => set("sewer_use", e.target.value)} placeholder="3090.07" />
+              <span className="hint">Centre main meter only</span></label>
+            <label>Bulk electricity total (R)<input inputMode="decimal" value={v.bulk_elec} onChange={(e) => set("bulk_elec", e.target.value)} placeholder="7847.58" />
+              <span className="hint">“Multiple cons. meters” — consumption + service & wires, feeding the prepaid sub-meters</span></label>
+            <label>…of which service & wires (R)<input inputMode="decimal" value={v.bulk_elec_fixed} onChange={(e) => set("bulk_elec_fixed", e.target.value)} placeholder="4204.18" /></label>
+            <label>Bulk electricity used (kWh)<input inputMode="decimal" value={v.bulk_elec_kwh} onChange={(e) => set("bulk_elec_kwh", e.target.value)} placeholder="1239" /></label>
+            <label>Other charges (R)<input inputMode="decimal" value={v.other_charges} onChange={(e) => set("other_charges", e.target.value)} placeholder="179.13" />
+              <span className="hint">Dunning, interest and other penalty lines</span></label>
+            <div className="wide">
               <h3>Tenant meters on the City account</h3>
               <p className="meta">Meters the City bills on your account that serve one tenant (e.g. Visfabriek&apos;s electricity, meter 74861) or a group of tenants (e.g. water meter C-XJK3343). Enter the meter&apos;s total from the bill <b>excluding VAT</b>, including its fixed/service charges — for a water meter, add the water and sewerage lines for that meter. Shared meters are split by the members&apos; floor area.</p>
               <table className="lines">
@@ -97,6 +117,30 @@ export default function CityBill({ period, onSaved }) {
               </table>
               <button className="ghost small-btn" style={{ marginTop: 6 }} onClick={() => setItems((ls) => [...ls, { unit_code: "3", service: "electricity", meter_no: "", usage: "", usage_unit: "kWh", usage_period: "", amount: "" }])}>+ Add tenant meter</button>
             </div>
+            <div className="wide">
+              <h3>Prepaid electricity (Citiq building statement)</h3>
+              <p className="meta">From Citiq&apos;s building statement: kWh, “Tokens purchased incl VAT” and “Total recovery” for each meter. Link each meter to its real unit — Citiq&apos;s own unit numbers don&apos;t match the shops.</p>
+              <table className="lines">
+                <thead><tr><th>Citiq meter</th><th>Citiq label</th><th>Unit</th><th className="num">kWh</th><th className="num">Tokens</th><th className="num">Recovery</th><th>Statement period</th><th></th></tr></thead>
+                <tbody>{prepaid.map((p, i) => {
+                  const up = (k, x) => setPrepaid((ls) => ls.map((l, j) => (j === i ? { ...l, [k]: x } : l)));
+                  return (
+                    <tr key={i}>
+                      <td><input value={p.meter_no} onChange={(e) => up("meter_no", e.target.value)} placeholder="54730327662" /></td>
+                      <td><input value={p.label} onChange={(e) => up("label", e.target.value)} placeholder="3 Potters" /></td>
+                      <td><select value={p.unit_code} onChange={(e) => up("unit_code", e.target.value)}>
+                        <option value="">Choose…</option>{d.units.map((u) => <option key={u.code} value={u.code}>{u.name}</option>)}</select></td>
+                      <td className="num"><input className="n" inputMode="decimal" value={p.kwh} onChange={(e) => up("kwh", e.target.value)} /></td>
+                      <td className="num"><input className="n" inputMode="decimal" value={p.tokens} onChange={(e) => up("tokens", e.target.value)} /></td>
+                      <td className="num"><input className="n" inputMode="decimal" value={p.recovery} onChange={(e) => up("recovery", e.target.value)} /></td>
+                      <td><input value={p.statement_period} onChange={(e) => up("statement_period", e.target.value)} placeholder="1–30 Sep 2026" /></td>
+                      <td><button className="linkish" onClick={() => setPrepaid((ls) => ls.filter((_, j) => j !== i))} aria-label="Remove">×</button></td>
+                    </tr>
+                  );
+                })}</tbody>
+              </table>
+              <button className="ghost small-btn" style={{ marginTop: 6 }} onClick={() => setPrepaid((ls) => [...ls, { meter_no: "", label: "", unit_code: "", kwh: "", tokens: "", recovery: "", statement_period: ls.at(-1)?.statement_period || "" }])}>+ Add prepaid meter</button>
+            </div>
             <label className="wide">Notes<input value={v.notes} onChange={(e) => set("notes", e.target.value)} placeholder="e.g. bill 240010083074, water period 19 Sep – 19 Oct" /></label>
           </div>
         </>
@@ -105,6 +149,43 @@ export default function CityBill({ period, onSaved }) {
       <div className="row wrap">
         {open ? <button onClick={save}>Save City bill</button> : <button className="ghost" onClick={() => setOpen(true)}>Edit City bill</button>}
       </div>
+      {b && !open && d.recovery && (
+        <div style={{ marginTop: 8 }}>
+          <h3>City bill vs what we recover</h3>
+          <table className="tight">
+            <thead><tr><th>Service</th><th className="num">City cost</th><th className="num">Recovered</th><th className="num">Gap</th></tr></thead>
+            <tbody>
+              {d.recovery.rows.filter((r) => r.cost || r.recovered).map((r) => (
+                <tr key={r.key}><td>{r.label}<br /><span className="meta">{r.how}</span></td><td className="num">{R(r.cost)}</td>
+                  <td className="num">{R(r.recovered)}</td><td className="num"><span className={gapCls(r.gap)}>{r.gap > 0 ? "+" : ""}{R(r.gap)}</span></td></tr>
+              ))}
+              <tr><td><b>Total</b></td><td className="num"><b>{R(d.recovery.total.cost)}</b></td><td className="num"><b>{R(d.recovery.total.recovered)}</b></td>
+                <td className="num"><b className={gapCls(d.recovery.total.gap)}>{R(d.recovery.total.gap)}</b></td></tr>
+            </tbody>
+          </table>
+          <p className="meta">Costs include the City&apos;s 15% VAT while the company isn&apos;t VAT-registered (rates have none). “Recovered” is this month&apos;s invoice lines — drafts and issued, net of credit notes — plus the Citiq payout. A negative gap is what the company carries; a positive one is over-recovery a tenant could dispute.</p>
+          {d.prepaid.length > 0 && (
+            <>
+              <h3>Prepaid electricity by meter</h3>
+              <table className="tight">
+                <thead><tr><th>Unit</th><th>Citiq label / meter</th><th className="num">kWh</th><th className="num">Tokens</th><th className="num">Recovery</th><th className="num">Per kWh</th></tr></thead>
+                <tbody>{d.prepaid.map((p) => (
+                  <tr key={p.id}><td>{p.unit_name || "—"}{p.tenant ? <><br /><span className="meta">{p.tenant}</span></> : p.unit_code ? <><br /><span className="warnbox">vacant</span></> : null}</td>
+                    <td>{p.label}<br /><span className="meta">{p.meter_no}</span></td><td className="num">{p.kwh ?? "—"}</td><td className="num">{R(p.tokens)}</td>
+                    <td className="num">{R(p.recovery)}</td><td className="num">{p.kwh ? R(p.recovery / p.kwh) : "—"}</td></tr>
+                ))}
+                  <tr><td colSpan={2}><b>Total</b>{d.prepaid[0]?.statement_period ? <span className="meta"> ({d.prepaid[0].statement_period})</span> : null}</td>
+                    <td className="num"><b>{d.recovery.prepaid.kwh}</b></td><td className="num"><b>{R(d.recovery.prepaid.tokens)}</b></td>
+                    <td className="num"><b>{R(d.recovery.prepaid.recovery)}</b></td><td className="num">{d.recovery.prepaid.kwh ? R(d.recovery.prepaid.recovery / d.recovery.prepaid.kwh) : "—"}</td></tr>
+                </tbody>
+              </table>
+            </>
+          )}
+          {d.recovery.flags.length > 0 && (
+            <ul className="warnbox" style={{ paddingLeft: 20 }}>{d.recovery.flags.map((f, i) => <li key={i}>{f}</li>)}</ul>
+          )}
+        </div>
+      )}
       <details>
         <summary>How it&apos;s split ({d.basis === "total" ? `over ${d.buildingArea} m² building area` : `over ${d.letArea} m² let`})</summary>
         <table className="tight">

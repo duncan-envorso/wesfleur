@@ -16,6 +16,10 @@ instead of landing on a tenant's invoice.
   and payment reference. Corrections are made with credit notes (CN numbers). Record payments to keep
   tenant balances. Until a VAT registration date is set in Settings, documents are titled "Invoice"
   with no VAT; from that date they become tax invoices with VAT added.
+- **City bill vs recovery** (Invoices page) — enter the whole City account (rates, water and sewerage,
+  bulk electricity, refuse, penalties) and the Citiq prepaid building statement per meter. The app
+  compares each City charge with what was invoiced or refunded by Citiq, shows the gap, and flags
+  unmetered kWh, a prepaid tariff below City cost, vacant units buying electricity and let units buying none.
 - **Users** — the APP_USERNAME login is always an admin. Admins can add users in Settings as
   *admin* or *meter reader*; meter readers can only capture readings.
 

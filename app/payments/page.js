@@ -22,7 +22,7 @@ function RecordRow({ row, period, onSaved, onCancel }) {
   }
   return (
     <tr className="inline-form-row">
-      <td colSpan={9}>
+      <td colSpan={10}>
         <div className="inline-form">
           <label>Date received<input type="date" value={v.paid_on} onChange={(e) => setV({ ...v, paid_on: e.target.value })} /></label>
           <label>Amount (R)<input inputMode="decimal" value={v.amount} autoFocus onChange={(e) => setV({ ...v, amount: e.target.value })} /></label>
@@ -102,10 +102,10 @@ export default function Payments() {
         <table className="collections">
           <thead>
             <tr><th>Unit</th><th>Tenant</th><th className="num">Brought forward</th><th className="num">This month</th>
-              <th className="num">Paid</th><th className="num">Due</th><th>Status</th><th>Last paid</th><th></th></tr>
+              <th className="num">Paid</th><th className="num">Waived</th><th className="num">Due</th><th>Status</th><th>Last paid</th><th></th></tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={9} className="meta">Nobody in this view.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={10} className="meta">Nobody in this view.</td></tr>}
             {rows.map((r) => {
               const [s, cls] = STATUS[r.status];
               return [
@@ -116,6 +116,7 @@ export default function Payments() {
                   <td className="num">{r.invoiced ? R(r.invoiced) : <span className="meta">—</span>}
                     <div className="meta">{r.invoiceState === "issued" ? r.numbers.join(", ") : r.invoiceState === "draft" ? "draft" : "no invoice yet"}</div></td>
                   <td className="num">{r.paid ? R(r.paid) : <span className="meta">—</span>}</td>
+                  <td className="num">{r.adjusted ? R(-r.adjusted) : <span className="meta">—</span>}</td>
                   <td className="num due">{R(r.due)}</td>
                   <td><span className={`pill ${cls}`}>{s}</span></td>
                   <td className="nowrap">{dateZA(r.last_paid)}</td>
@@ -128,7 +129,7 @@ export default function Payments() {
           </tbody>
           <tfoot>
             <tr><td colSpan={2}><b>Total</b></td><td className="num">{R(t.bf)}</td><td className="num">{R(t.invoiced)}</td>
-              <td className="num">{R(t.paid)}</td><td className="num"><b>{R(t.due)}</b></td><td colSpan={3}></td></tr>
+              <td className="num">{R(t.paid)}</td><td className="num">{t.adjusted ? R(-t.adjusted) : "—"}</td><td className="num"><b>{R(t.due)}</b></td><td colSpan={3}></td></tr>
           </tfoot>
         </table>
       </div>

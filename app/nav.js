@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 // Small stroke icons so the sidebar needs no icon library.
 const ICONS = {
+  todo: <><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M8 12l3 3 5-6" /></>,
   tenants: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5" /><path d="M16 5.5a3 3 0 0 1 0 5.6M18 14.3c1.6.6 2.6 2.1 3 4.7" /></>,
   invoices: <><path d="M6 3h9l4 4v14H6z" /><path d="M15 3v4h4M9 12h7M9 16h7M9 8h3" /></>,
   meters: <><circle cx="12" cy="13" r="8" /><path d="M12 13l4-4M8 17h8" /></>,
@@ -25,7 +26,10 @@ const Icon = ({ name }) => (
 );
 
 const SECTIONS = [
-  { title: "Property", admin: true, items: [{ href: "/tenants", label: "Tenants", icon: "tenants" }] },
+  { title: "Property", admin: true, items: [
+    { href: "/todos", label: "To-do", icon: "todo" },
+    { href: "/tenants", label: "Tenants", icon: "tenants" },
+  ] },
   { title: "Money", admin: true, items: [
     { href: "/invoices", label: "Invoices", icon: "invoices" },
     { href: "/payments", label: "Payments", icon: "payments" },

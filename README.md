@@ -33,6 +33,10 @@ instead of landing on a tenant's invoice.
   dated log for notices, arrears, maintenance, insurance and deposit movements.
   It starts with the Westfleur tenant roll loaded; unknown facts are left blank and flagged.
 
+- **To-do** (admins) — a task list for the centre: quick-add or full form with due date, priority,
+  tenant, shop/area, who's doing it and notes. Open tasks are grouped into overdue, today, next 7 days,
+  later and no date (dates in Cape Town time); tick to mark done, with who and when kept.
+
 - **Capture** — one card per meter: take a photo, type the reading (`0247,5018` or `247.5018`),
   see usage and cost instantly, save. The photo is stored with the reading as evidence.
   For a meter's first month, enter last month's reading as the opening reading.

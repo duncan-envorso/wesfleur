@@ -206,3 +206,19 @@ table.pl tr.pl-total.strong td { font-size: 15px; background: var(--brand-soft);
 table.pl tr.pl-gap td { background: #fff; height: 10px; padding: 0; border: 0; }
 .neg { color: var(--bad); }
 .pos { color: var(--ok); }
+
+/* To-do */
+.todo-quick { display: flex; gap: 8px; margin: 0 0 14px; }
+.todo-quick input { flex: 1; }
+.bad-text { color: var(--bad); }
+.todo-group { margin-bottom: 18px; }
+.todo-group h2 { font-size: 15px; margin: 0 0 6px; }
+.todo-list { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.todo { display: flex; gap: 12px; align-items: flex-start; padding: 11px 14px; border-top: 1px solid var(--line); }
+.todo:first-child { border-top: 0; }
+.todo input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--brand); flex: none; cursor: pointer; }
+.todo-body { flex: 1; min-width: 0; }
+.todo-title { font-weight: 500; overflow-wrap: anywhere; }
+.todo-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.todo-notes { font-size: 13.5px; color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
+.todo.is-done .todo-title { text-decoration: line-through; color: var(--muted); }

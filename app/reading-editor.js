@@ -40,7 +40,9 @@ export function EditableReading({ meterId, period, value, note, onSaved, label }
   async function save(reading = v, confirm = false) {
     setBusy(true); setErr("");
     try {
-      const res = await postReading({ meter_id: meterId, period, reading, note: n || "Corrected" }, confirm);
+      let readBy = "";
+      try { readBy = localStorage.getItem("readBy") || ""; } catch {}
+      const res = await postReading({ meter_id: meterId, period, reading, note: n || "Corrected", read_by: readBy }, confirm);
       if (res.problem) { setV(reading); setProblem(res.problem); return; }
       setOpen(false); setProblem(null); onSaved();
     } catch (e) { setErr(e.message); } finally { setBusy(false); }

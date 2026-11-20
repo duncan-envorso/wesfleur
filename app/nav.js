@@ -105,7 +105,9 @@ export default function Nav() {
               </div>
             </div>
           )}
-          <button className="side-link as-button" onClick={logout}><Icon name="logout" />Sign out</button>
+          {me?.user
+            ? <button className="side-link as-button" onClick={logout}><Icon name="logout" />Sign out</button>
+            : <Link href="/login" className="side-link"><Icon name="logout" />Admin sign in</Link>}
         </div>
       </aside>
     </>

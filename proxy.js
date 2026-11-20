@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { COOKIE, verifyToken } from "./lib/session";
 
 const PUBLIC = ["/login", "/api/login"];
+// Staff capture meter readings and photos without signing in (the API routes add their own limits).
+const STAFF_OPEN = ["/", "/api/readings", "/api/read-photo", "/api/me"];
 // Readers can only capture meter readings; everything else needs an admin.
 const READER_OK = ["/", "/api/readings", "/api/read-photo", "/api/me"];
 
@@ -11,6 +13,11 @@ export async function proxy(req) {
 
   const session = await verifyToken(req.cookies.get(COOKIE)?.value);
   const isApi = pathname.startsWith("/api/");
+  if (!session && STAFF_OPEN.includes(pathname) && ["GET", "POST", "HEAD"].includes(req.method)) {
+    const res = NextResponse.next();
+    if (isApi) res.headers.set("cache-control", "no-store");
+    return res;
+  }
   if (!session) {
     if (isApi) return NextResponse.json({ error: "Signed out — please log in again" }, { status: 401 });
     const url = req.nextUrl.clone();

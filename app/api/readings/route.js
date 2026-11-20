@@ -2,6 +2,11 @@ import { put } from "@vercel/blob";
 import { db } from "@/lib/db";
 import { checkReading, parseReading } from "@/lib/calc";
 import { buildReport } from "@/lib/report";
+import { cookies } from "next/headers";
+import { COOKIE, verifyToken } from "@/lib/session";
+
+const session = async () => verifyToken((await cookies()).get(COOKIE)?.value);
+const monthShift = (n) => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + n); return d.toISOString().slice(0, 7); };
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +30,14 @@ export async function POST(req) {
     const reading = parseReading(form.get("reading"));
     if (!meterId || !/^\d{4}-\d{2}$/.test(period)) return Response.json({ error: "meter and period required" }, { status: 400 });
     if (!Number.isFinite(reading)) return Response.json({ error: "Enter the reading as a number, e.g. 0247,5018" }, { status: 400 });
+
+    // Staff without a login: name required, and only last month, this month or next month can be changed.
+    if (!(await session())) {
+      if (!String(form.get("read_by") || "").trim()) return Response.json({ error: "Enter your name under \"Read by\" before saving" }, { status: 400 });
+      if (period < monthShift(-1) || period > monthShift(1)) {
+        return Response.json({ error: `Without signing in you can only save readings for ${monthShift(-1)} to ${monthShift(1)}. Ask an admin to change older months.` }, { status: 403 });
+      }
+    }
 
     // Catch typos (e.g. a missing comma) before they are saved.
     if (form.get("confirm") !== "1") {
@@ -69,6 +82,7 @@ export async function POST(req) {
 }
 
 export async function DELETE(req) {
+  if ((await session())?.role !== "admin") return Response.json({ error: "Only admins can delete readings" }, { status: 403 });
   const id = Number(new URL(req.url).searchParams.get("id"));
   const q = await db();
   await q`DELETE FROM readings WHERE id = ${id}`;

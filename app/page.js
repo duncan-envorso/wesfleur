@@ -54,6 +54,7 @@ function MeterCard({ m, period, tariffs, aiEnabled, readBy, onSaved }) {
 
   async function save(reading = value, confirm = false) {
     setError("");
+    if (!readBy.trim()) return setError("Enter your name under \"Read by\" at the top first");
     if (!Number.isFinite(parseReading(reading))) return setError("Enter the reading, e.g. 0247,5018");
     setBusy("Saving…");
     try {

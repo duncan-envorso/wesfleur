@@ -81,7 +81,12 @@ export default function Report() {
         <>
           <div className="summary">
             <div className="stat"><span className="meta">To recharge to tenants</span><b>{money(data.rechargeTotal)}</b></div>
-            {rec && <div className="stat"><span className="meta">City main meter</span><b>{fmt(rec.mainUsage)} kL</b></div>}
+            {(data.mains || []).map((mm) => (
+              <div className="stat" key={mm.id}>
+                <span className="meta">{mm.name}{mm.shared ? " · shared, split by area (not in the comparison)" : ""}</span>
+                <b>{mm.usage === null ? "no reading" : `${fmt(mm.usage)} kL`}</b>
+              </div>
+            ))}
             {rec && <div className="stat"><span className="meta">Sum of sub-meters</span><b>{fmt(rec.subTotal)} kL</b></div>}
             {rec && (
               <div className={"stat" + (Math.abs(rec.unaccounted) > 1 ? " alert" : "")}>
@@ -90,7 +95,7 @@ export default function Report() {
                 {rec.missing.length > 0 && <span className="meta">Missing readings: {rec.missing.join(", ")}</span>}
               </div>
             )}
-            {!rec && <div className="stat"><span className="meta">Reconciliation</span><span className="meta">Read the City main meter this month and last to see unaccounted water.</span></div>}
+            {!rec && <div className="stat"><span className="meta">Reconciliation</span><span className="meta">Read the City main meters this month and last to see unaccounted water.</span></div>}
           </div>
 
           <div className="scroll">
@@ -129,7 +134,7 @@ export default function Report() {
                   if (!tt.count) return null;
                   return (
                     <tr key={type}>
-                      <td colSpan={4}><b>{label}</b><div className="meta">{tt.count} meter{tt.count === 1 ? "" : "s"} · excludes City main meter{tt.recharged !== tt.total ? ` · ${money(tt.recharged)} recharged to tenants` : ""}</div></td>
+                      <td colSpan={4}><b>{label}</b><div className="meta">{tt.count} meter{tt.count === 1 ? "" : "s"} · excludes City main meters{tt.recharged !== tt.total ? ` · ${money(tt.recharged)} recharged to tenants` : ""}</div></td>
                       <td className="num"><b>{fmt(tt.usage)} {unit}</b></td>
                       <td className="num"><b>{money(tt.first)}</b></td>
                       <td className="num"><b>{type === "water" ? money(tt.sewer) : ""}</b></td>

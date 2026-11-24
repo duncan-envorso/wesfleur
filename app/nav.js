@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ROLE_LABELS } from "@/lib/session";
 
 // Small stroke icons so the sidebar needs no icon library.
 const ICONS = {
@@ -26,9 +27,9 @@ const Icon = ({ name }) => (
 );
 
 const SECTIONS = [
-  { title: "Property", admin: true, items: [
-    { href: "/todos", label: "To-do", icon: "todo" },
-    { href: "/tenants", label: "Tenants", icon: "tenants" },
+  { title: "Property", items: [
+    { href: "/todos", label: "To-do", icon: "todo", manager: true },
+    { href: "/tenants", label: "Tenants", icon: "tenants", admin: true },
   ] },
   { title: "Money", admin: true, items: [
     { href: "/invoices", label: "Invoices", icon: "invoices" },
@@ -56,6 +57,9 @@ export default function Nav() {
   if (path === "/login") return null;
 
   const admin = me?.role === "admin";
+  const manager = me?.role === "manager";
+  // Admins see everything; property managers see items marked manager; others see the rest.
+  const canSee = (i) => admin || (!i.admin && (!i.manager || manager));
   const active = (href) => (href === "/" ? path === "/" : path === href || path.startsWith(href + "/"));
   async function logout() {
     await fetch("/api/login", { method: "DELETE" });
@@ -81,7 +85,7 @@ export default function Nav() {
         </div>
         <nav className="side-nav">
           {SECTIONS.filter((s) => !s.admin || admin).map((s) => {
-            const items = s.items.filter((i) => !i.admin || admin);
+            const items = s.items.filter(canSee);
             if (!items.length) return null;
             return (
               <div key={s.title} className="side-group">
@@ -101,7 +105,7 @@ export default function Nav() {
               <div className="avatar" aria-hidden="true">{me.user.slice(0, 1).toUpperCase()}</div>
               <div>
                 <div className="who-name">{me.user}</div>
-                <div className="who-role">{me.role === "admin" ? "Admin" : "Meter reader"}</div>
+                <div className="who-role">{ROLE_LABELS[me.role] || "Meter reader"}</div>
               </div>
             </div>
           )}

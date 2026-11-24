@@ -14,7 +14,14 @@ export async function GET(req) {
   const period = new URL(req.url).searchParams.get("period");
   if (!/^\d{4}-\d{2}$/.test(period || "")) return Response.json({ error: "period must be YYYY-MM" }, { status: 400 });
   try {
-    return Response.json(await buildReport(period));
+    const r = await buildReport(period);
+    if ((await session())?.role === "admin") return Response.json(r);
+    // Everyone else gets the readings and usage only: no tariffs, Rand amounts or recharge totals.
+    return Response.json({
+      period: r.period,
+      tariffs: null,
+      meters: r.meters.map(({ calc, ...m }) => ({ ...m, usage: calc?.usage ?? null })),
+    });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
   }

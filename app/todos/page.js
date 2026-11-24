@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, dateZA } from "../tenants/ui";
 
-const BLANK = { title: "", notes: "", due_date: "", priority: "normal", tenant_id: "", unit_code: "", assigned_to: "" };
+const BLANK = { title: "", notes: "", due_date: "", priority: "normal", tenant_id: "", unit_code: "", assigned_to: "", private: false };
 const GROUPS = [
   ["overdue", "Overdue"],
   ["today", "Today"],
@@ -13,9 +13,13 @@ const GROUPS = [
   ["done", "Done"],
 ];
 const PRI = { high: ["High", "bad"], normal: ["Normal", ""], low: ["Low", ""] };
+const UNASSIGNED = "__none";
+const WHO_KEY = "todos.who";
+const readWho = () => { try { return localStorage.getItem(WHO_KEY) || ""; } catch { return ""; } };
+const saveWho = (v) => { try { v ? localStorage.setItem(WHO_KEY, v) : localStorage.removeItem(WHO_KEY); } catch { /* storage unavailable */ } };
 
-function TodoForm({ initial, tenants, onSaved, onCancel }) {
-  const [v, setV] = useState({ ...BLANK, ...(initial || {}), tenant_id: initial?.tenant_id ?? "", due_date: initial?.due_date ?? "" });
+function TodoForm({ initial, defaults, tenants, assignees, admin, onSaved, onCancel }) {
+  const [v, setV] = useState({ ...BLANK, ...(defaults || {}), ...(initial || {}), tenant_id: initial?.tenant_id ?? "", due_date: initial?.due_date ?? "" });
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (k, x) => setV((o) => ({ ...o, [k]: x }));
@@ -43,12 +47,21 @@ function TodoForm({ initial, tenants, onSaved, onCancel }) {
         <label>Tenant (optional)
           <select value={v.tenant_id} onChange={(e) => set("tenant_id", e.target.value)}>
             <option value="">—</option>
-            {tenants.map((t) => <option key={t.id} value={t.id}>{t.trading_name}{t.lease?.unit_code ? ` (Shop ${t.lease.unit_code})` : ""}</option>)}
+            {tenants.map((t) => <option key={t.id} value={t.id}>{t.trading_name}{t.unit_code ? ` (Shop ${t.unit_code})` : ""}</option>)}
           </select>
         </label>
         <label>Shop / area (optional)<input value={v.unit_code || ""} onChange={(e) => set("unit_code", e.target.value)} placeholder="e.g. 4, roof, gym" /></label>
-        <label>Who&apos;s doing it<input value={v.assigned_to || ""} onChange={(e) => set("assigned_to", e.target.value)} placeholder="e.g. Duncan, plumber" /></label>
+        <label>Assigned to
+          <input list="todo-assignees" value={v.assigned_to || ""} onChange={(e) => set("assigned_to", e.target.value)} placeholder="Pick or type a name, e.g. Kirah, plumber" />
+          <datalist id="todo-assignees">{assignees.map((a) => <option key={a.name} value={a.name} />)}</datalist>
+        </label>
         <label className="wide">Notes<textarea rows={2} value={v.notes || ""} onChange={(e) => set("notes", e.target.value)} /></label>
+        {admin && (
+          <label className="wide check">
+            <input type="checkbox" checked={!!v.private} onChange={(e) => set("private", e.target.checked)} />
+            Admins only <span className="meta">— hidden from property managers (use for rents, money or anything about their own lease)</span>
+          </label>
+        )}
       </div>
       {err && <p className="err">{err}</p>}
       <div><button disabled={busy}>{busy ? "Saving…" : "Save task"}</button></div>
@@ -58,8 +71,10 @@ function TodoForm({ initial, tenants, onSaved, onCancel }) {
 
 export default function Todos() {
   const [show, setShow] = useState("open");
+  const [who, setWhoState] = useState("");
+  useEffect(() => { setWhoState(readWho()); }, []);
+  const setWho = (v) => { setWhoState(v); saveWho(v); };
   const [data, setData] = useState(null);
-  const [tenants, setTenants] = useState([]);
   const [form, setForm] = useState(null); // null | {} (new) | task (edit)
   const [quick, setQuick] = useState("");
   const [msg, setMsg] = useState("");
@@ -67,15 +82,14 @@ export default function Todos() {
   const pending = useRef({ id: null, at: 0 });
 
   const load = useCallback(async () => {
-    try { setData(await api(`/api/todos?show=${show}`)); setErr(""); } catch (e) { setErr(e.message); }
-  }, [show]);
+    try { setData(await api(`/api/todos?show=${show}&who=${encodeURIComponent(who)}`)); setErr(""); } catch (e) { setErr(e.message); }
+  }, [show, who]);
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { api("/api/tenants").then((j) => setTenants(j.tenants || [])).catch(() => {}); }, []);
 
   async function addQuick(e) {
     e.preventDefault();
     if (!quick.trim()) return;
-    try { await api("/api/todos", "POST", { title: quick }); setQuick(""); setMsg("Task added."); load(); } catch (e2) { setErr(e2.message); }
+    try { await api("/api/todos", "POST", { title: quick, assigned_to: forPerson }); setQuick(""); setMsg("Task added."); load(); } catch (e2) { setErr(e2.message); }
   }
   async function toggle(t) {
     setData((d) => ({ ...d, rows: d.rows.map((r) => (r.id === t.id ? { ...r, done: !t.done } : r)) }));
@@ -89,6 +103,11 @@ export default function Todos() {
   }
 
   const c = data?.counts;
+  const assignees = data?.assignees || [];
+  const tenants = data?.tenantOptions || [];
+  const admin = !!data?.admin;
+  // A specific person is selected: new tasks are assigned to them by default.
+  const forPerson = who && who !== UNASSIGNED ? (assignees.find((a) => a.name.toLowerCase() === who.toLowerCase())?.name || who) : "";
   return (
     <>
       <div className="page-head">
@@ -99,7 +118,8 @@ export default function Todos() {
         <div className="row wrap"><button onClick={() => setForm({})}>New task</button></div>
       </div>
       {err && <p className="err">{err}</p>}
-      {form && <TodoForm key={form.id || "new"} initial={form.id ? form : null} tenants={tenants} onCancel={() => setForm(null)}
+      {form && <TodoForm key={form.id || "new"} initial={form.id ? form : null} defaults={forPerson ? { assigned_to: forPerson } : null}
+        tenants={tenants} assignees={assignees} admin={admin} onCancel={() => setForm(null)}
         onSaved={() => { setForm(null); setMsg("Task saved."); load(); }} />}
 
       {c && (
@@ -112,7 +132,7 @@ export default function Todos() {
       )}
 
       <form className="todo-quick" onSubmit={addQuick}>
-        <input value={quick} onChange={(e) => setQuick(e.target.value)} placeholder="Quick add a task and press Enter…" aria-label="Quick add a task" />
+        <input value={quick} onChange={(e) => setQuick(e.target.value)} placeholder={forPerson ? `Quick add a task for ${forPerson} and press Enter…` : "Quick add a task and press Enter…"} aria-label="Quick add a task" />
         <button className="ghost" disabled={!quick.trim()}>Add</button>
       </form>
 
@@ -122,11 +142,21 @@ export default function Todos() {
             <button key={k} role="tab" aria-selected={show === k} className={show === k ? "on" : ""} onClick={() => setShow(k)}>{l}</button>
           ))}
         </div>
+        <label className="todo-who">Assigned to
+          <select value={who} onChange={(e) => setWho(e.target.value)}>
+            <option value="">Everyone</option>
+            <option value={UNASSIGNED}>Unassigned{data ? ` (${data.unassignedOpen} open)` : ""}</option>
+            {who && who !== UNASSIGNED && !assignees.some((a) => a.name.toLowerCase() === who.toLowerCase()) && <option value={who}>{who}</option>}
+            {assignees.map((a) => <option key={a.name} value={a.name}>{a.name}{a.open ? ` (${a.open} open)` : ""}</option>)}
+          </select>
+        </label>
         {msg && <span className="pill ok">{msg}</span>}
       </div>
 
       {data && data.rows.length === 0 && (
-        <p className="meta">{show === "done" ? "Nothing ticked off yet." : "Nothing on the list. Add a task above."}</p>
+        <p className="meta">{who
+          ? `No ${show === "done" ? "finished" : show === "all" ? "" : "open"} tasks ${who === UNASSIGNED ? "without anyone assigned" : `assigned to ${forPerson}`}.`.replace("  ", " ")
+          : show === "done" ? "Nothing ticked off yet." : "Nothing on the list. Add a task above."}</p>
       )}
       {data && GROUPS.map(([key, label]) => {
         const rows = data.rows.filter((r) => r.bucket === key);
@@ -143,9 +173,12 @@ export default function Todos() {
                     <div className="todo-meta">
                       {t.priority !== "normal" && <span className={`pill ${PRI[t.priority][1]}`}>{PRI[t.priority][0]}</span>}
                       {t.due_date && <span className={key === "overdue" ? "bad-text" : ""}>Due {dateZA(t.due_date)}</span>}
-                      {t.tenant_id && <Link href={`/tenants/${t.tenant_id}`}>{t.tenant_name}</Link>}
+                      {t.private && <span className="pill warn" title="Hidden from property managers">Admins only</span>}
+                      {t.tenant_id && (admin ? <Link href={`/tenants/${t.tenant_id}`}>{t.tenant_name}</Link> : <span>{t.tenant_name}</span>)}
                       {t.unit_code && <span>Shop/area {t.unit_code}</span>}
-                      {t.assigned_to && <span>→ {t.assigned_to}</span>}
+                      {t.assigned_to
+                        ? <button type="button" className="pill info todo-person" title="Show only their tasks" onClick={() => setWho(t.assigned_to)}>{t.assigned_to}</button>
+                        : <span className="meta">Unassigned</span>}
                       {t.done && t.done_at && <span>Done {dateZA(String(t.done_at).slice(0, 10))}{t.done_by ? ` by ${t.done_by}` : ""}</span>}
                     </div>
                     {t.notes && <div className="todo-notes">{t.notes}</div>}

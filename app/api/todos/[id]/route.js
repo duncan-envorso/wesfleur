@@ -1,4 +1,4 @@
-import { currentUser, handle } from "@/lib/api";
+import { currentSession, handle } from "@/lib/api";
 import { deleteTodo, saveTodo, setDone } from "@/lib/todos";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +7,12 @@ export const dynamic = "force-dynamic";
 export const POST = handle(async (req, { params }) => {
   const id = (await params).id;
   const body = await req.json();
-  if (Object.keys(body).length === 1 && "done" in body) return setDone(id, !!body.done, await currentUser());
-  return saveTodo(body, await currentUser(), id);
+  const s = await currentSession();
+  const admin = s?.role === "admin";
+  if (Object.keys(body).length === 1 && "done" in body) return setDone(id, !!body.done, s?.user, admin);
+  return saveTodo(body, s?.user, id, admin);
 });
-export const DELETE = handle(async (req, { params }) => deleteTodo((await params).id));
+export const DELETE = handle(async (req, { params }) => {
+  const s = await currentSession();
+  return deleteTodo((await params).id, s?.role === "admin");
+});

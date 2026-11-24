@@ -19,8 +19,10 @@ function MeterCard({ m, period, tariffs, aiEnabled, readBy, onSaved }) {
 
   const current = parseReading(value);
   const previous = m.previous ?? (opening ? parseReading(opening) : null);
+  // Non-admins get no tariffs from the server, so they see usage only, not Rand amounts.
   const calc = Number.isFinite(current) && Number.isFinite(previous)
-    ? calculate({ type: m.type, previous, current }, tariffs)
+    ? (tariffs ? calculate({ type: m.type, previous, current }, tariffs)
+      : (({ usage, warning }) => ({ usage, warning, lines: [], total: null, usageOnly: true }))(calculate({ type: m.type, previous, current })))
     : null;
   const unit = m.type === "electricity" ? "kWh" : "kL";
 
@@ -116,7 +118,7 @@ function MeterCard({ m, period, tariffs, aiEnabled, readBy, onSaved }) {
           {calc.lines.map((l) => (
             <div className="row" key={l.label}><span>{l.label} {fmt(l.qty, 3)} {l.unit} × {money(l.rate)}</span><span>{money(l.amount)}</span></div>
           ))}
-          <div className="row tot"><span>Total{tariffs.add_vat ? " incl. VAT" : ""}</span><span>{money(calc.total)}</span></div>
+          {!calc.usageOnly && <div className="row tot"><span>Total{tariffs.add_vat ? " incl. VAT" : ""}</span><span>{money(calc.total)}</span></div>}
           {calc.warning && <div className="warnbox">{calc.warning}</div>}
         </div>
       )}

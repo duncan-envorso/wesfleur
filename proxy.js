@@ -4,8 +4,15 @@ import { COOKIE, verifyToken } from "./lib/session";
 const PUBLIC = ["/login", "/api/login"];
 // Staff capture meter readings and photos without signing in (the API routes add their own limits).
 const STAFF_OPEN = ["/", "/api/readings", "/api/read-photo", "/api/me"];
-// Readers can only capture meter readings; everything else needs an admin.
+// Readers can only capture meter readings. Property managers also get the To-do list
+// (no money: invoices, payments, tenants' rents, reports and settings stay admin-only).
 const READER_OK = ["/", "/api/readings", "/api/read-photo", "/api/me"];
+const MANAGER_OK = [...READER_OK, "/todos", "/api/todos"];
+function allowed(role, pathname) {
+  if (role === "admin") return true;
+  if (role === "manager") return MANAGER_OK.includes(pathname) || pathname.startsWith("/api/todos/");
+  return READER_OK.includes(pathname);
+}
 
 export async function proxy(req) {
   const { pathname, search } = req.nextUrl;
@@ -25,8 +32,8 @@ export async function proxy(req) {
     url.search = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname + search)}`;
     return NextResponse.redirect(url);
   }
-  if (session.role !== "admin" && !READER_OK.includes(pathname)) {
-    if (isApi) return NextResponse.json({ error: "Only admins can do this" }, { status: 403 });
+  if (!allowed(session.role, pathname)) {
+    if (isApi) return NextResponse.json({ error: "You don’t have access to this" }, { status: 403 });
     const url = req.nextUrl.clone();
     url.pathname = "/";
     url.search = "";

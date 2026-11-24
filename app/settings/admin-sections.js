@@ -110,7 +110,7 @@ export function UsersSettings() {
   return (
     <section className="card" style={{ marginTop: 20 }}>
       <div className="row"><h2>Users</h2>{msg && <span className={/Saved|added/.test(msg) ? "pill ok" : "err"}>{msg}</span>}</div>
-      <p className="meta"><b>Admins</b> see everything and can issue invoices. <b>Meter readers</b> can only capture meter readings. The login set in Vercel (APP_USERNAME) is always an admin.</p>
+      <p className="meta"><b>Admins</b> see everything and can issue invoices. <b>Property managers</b> see meter readings (usage only, no Rand amounts) and the To-do list, but not tasks marked Admins only, and nothing about money, rents or tenants&apos; details. <b>Meter readers</b> can only capture meter readings. The login set in Vercel (APP_USERNAME) is always an admin.</p>
       {users.length > 0 && (
         <table className="tight">
           <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Active</th><th>Last sign-in</th><th>Reset password</th></tr></thead>
@@ -118,7 +118,7 @@ export function UsersSettings() {
             {users.map((u) => (
               <tr key={u.id}>
                 <td>{u.username}</td><td>{u.name}</td>
-                <td><select value={u.role} onChange={(e) => patch(u.id, { role: e.target.value })}><option value="admin">Admin</option><option value="reader">Meter reader</option></select></td>
+                <td><select value={u.role} onChange={(e) => patch(u.id, { role: e.target.value })}><option value="admin">Admin</option><option value="manager">Property manager</option><option value="reader">Meter reader</option></select></td>
                 <td><input type="checkbox" checked={u.active} onChange={(e) => patch(u.id, { active: e.target.checked })} /></td>
                 <td className="meta">{u.last_login ? String(u.last_login).slice(0, 10) : "never"}</td>
                 <td><input type="password" placeholder="New password" onBlur={(e) => e.target.value && patch(u.id, { password: e.target.value }).then(() => (e.target.value = ""))} /></td>
@@ -132,7 +132,7 @@ export function UsersSettings() {
         <label>Username<input value={nu.username} autoCapitalize="none" onChange={(e) => setNu({ ...nu, username: e.target.value })} placeholder="kirah" /></label>
         <label>Name<input value={nu.name} onChange={(e) => setNu({ ...nu, name: e.target.value })} /></label>
         <label>Role
-          <select value={nu.role} onChange={(e) => setNu({ ...nu, role: e.target.value })}><option value="reader">Meter reader</option><option value="admin">Admin</option></select>
+          <select value={nu.role} onChange={(e) => setNu({ ...nu, role: e.target.value })}><option value="admin">Admin</option><option value="manager">Property manager</option><option value="reader">Meter reader</option></select>
         </label>
         <label>Password
           <div className="pw"><input value={nu.password} onChange={(e) => setNu({ ...nu, password: e.target.value })} placeholder="10+ characters" />

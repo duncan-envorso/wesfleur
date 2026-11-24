@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { api } from "../tenants/ui";
 import { SetupNotes, statusPill, when } from "./ui";
-import { dataLabel } from "@/lib/lease-fields";
+import { dataKey, dataLabel } from "@/lib/lease-fields";
 
 
 export default function SigningPage() {
@@ -77,7 +77,7 @@ function Templates({ templates }) {
       const r = await fetch("/api/lease-templates", { method: "POST", body: fd });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Upload failed");
-      router.push(`/signing/templates/${j.id}`);
+      router.push(`/signing/templates/${j.id}${j.boxes ? "?ready=1" : ""}`);
     } catch (e2) { setErr(e2.message); setBusy(false); }
   }
   return (
@@ -152,6 +152,15 @@ function FromTemplate({ tenantPreset, mail, templates, onCancel }) {
 
   if (!templates.length) return <div className="card"><p>No templates yet. Add one under <b>Lease templates</b> below, place its boxes, then come back.</p></div>;
   const dataFields = (tpl?.fields || []).filter((f) => f.kind === "data");
+  // One input per distinct detail, even if it appears in several places in the lease.
+  const groups = [];
+  for (const f of dataFields) {
+    const k = dataKey(f);
+    let g = groups.find((x) => x.key === k);
+    if (!g) groups.push((g = { key: k, label: f.source === "custom" ? f.label || "Other" : dataLabel(f.source), ids: [], pages: new Set(), long: false }));
+    g.ids.push(f.id); g.pages.add(f.page + 1); if (f.h > 0.04) g.long = true;
+  }
+  const setGroup = (g, val) => setValues((v) => { const n = { ...v }; for (const id of g.ids) n[id] = val; return n; });
   const setS = (i, k, v) => setSigners((a) => a.map((s, j) => (j === i ? { ...s, [k]: v } : s)));
 
   async function make(e) {
@@ -183,14 +192,20 @@ function FromTemplate({ tenantPreset, mail, templates, onCancel }) {
           <p className="meta">Filled in from the tenant&apos;s records. Change anything here; the tenant&apos;s records stay as they are.</p>
           {dataFields.length === 0 ? <p className="meta">This template has no lease data boxes.</p> : (
             <div className="formgrid">
-              {dataFields.map((f) => (
-                <label key={f.id}>{f.source === "custom" ? f.label || "Other" : dataLabel(f.source)} <span className="meta">(p. {f.page + 1})</span>
-                  <input value={values[f.id] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [f.id]: e.target.value }))} className={values[f.id] ? "" : "empty"} />
-                </label>
-              ))}
+              {groups.map((g) => {
+                const val = values[g.ids[0]] ?? "";
+                const where = `p. ${[...g.pages].join(", ")}`;
+                return (
+                  <label key={g.key} className={g.long ? "wide" : ""}>{g.label} <span className="meta">({where})</span>
+                    {g.long
+                      ? <textarea rows={3} value={val} onChange={(e) => setGroup(g, e.target.value)} className={val ? "" : "empty"} />
+                      : <input value={val} onChange={(e) => setGroup(g, e.target.value)} className={val ? "" : "empty"} />}
+                  </label>
+                );
+              })}
             </div>
           )}
-          {dataFields.some((f) => !values[f.id]) && <p className="warnbox">Some details are empty: fill them in, or they&apos;ll stay blank in the lease.</p>}
+          {groups.some((g) => !values[g.ids[0]]) && <p className="warnbox">Some details are empty: fill them in, or they&apos;ll stay blank in the lease.</p>}
           <label className="wide">Title<input value={title} onChange={(e) => setTitle(e.target.value)} required /></label>
           <h3 style={{ margin: "6px 0 0" }}>Who signs</h3>
           {signers.map((s, i) => (

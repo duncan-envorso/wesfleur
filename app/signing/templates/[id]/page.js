@@ -18,7 +18,10 @@ export default function TemplateEditor({ params }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api(`/api/lease-templates/${id}`).then(({ template }) => { setT(template); setFields(template.fields); setName(template.name); }).catch((e) => setErr(e.message));
+    api(`/api/lease-templates/${id}`).then(({ template }) => {
+      setT(template); setFields(template.fields); setName(template.name);
+      if (new URLSearchParams(window.location.search).get("ready")) setMsg(`Ready to use: ${template.fields.length} boxes came with this template`);
+    }).catch((e) => setErr(e.message));
   }, [id]);
   useEffect(() => {
     const warn = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } };

@@ -235,3 +235,29 @@ table.pl tr.pl-gap td { background: #fff; height: 10px; padding: 0; border: 0; }
 .todo.is-selected { background: #eef6f4; }
 .todo input.sel { accent-color: #2a5bb5; }
 button.ghost.on { background: var(--brand); color: #fff; }
+
+/* Tenants: rent income headline */
+.rentincome { padding: 18px 20px; margin-bottom: 16px; }
+.ri-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px 24px; align-items: flex-end; margin-bottom: 14px; }
+.ri-label { margin: 0; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+.ri-total { font-size: 40px; font-weight: 700; line-height: 1.15; color: var(--brand); font-variant-numeric: tabular-nums; }
+.ri-short { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid #f1c9b3; background: #fdf3ed; border-radius: 8px; }
+.ri-short b { color: var(--warn); font-size: 20px; font-variant-numeric: tabular-nums; }
+.ri-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.ri-list li { display: grid; grid-template-columns: minmax(150px, 1.3fr) 2fr 150px 52px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.ri-name { display: flex; flex-direction: column; text-decoration: none; color: var(--ink); min-width: 0; }
+.ri-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.ri-name .meta { font-size: 12.5px; }
+.ri-bar { height: 10px; background: var(--brand-soft); border-radius: 5px; overflow: hidden; }
+.ri-bar span { display: block; height: 100%; background: var(--brand-2); border-radius: 5px; }
+.ri-amt { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; display: flex; flex-direction: column; }
+.ri-due { font-size: 12px; font-weight: 500; color: var(--warn); }
+.ri-pct { text-align: right; font-variant-numeric: tabular-nums; }
+.ri-vacant .ri-bar { background: repeating-linear-gradient(45deg, #eef1f0 0 6px, #f7f9f8 6px 12px); }
+.ri-foot { display: flex; justify-content: space-between; padding-top: 10px; font-size: 16px; }
+.ri-foot b { font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) {
+  .ri-total { font-size: 32px; }
+  .ri-list li { grid-template-columns: 1fr 140px; grid-template-areas: "name amt" "bar pct"; row-gap: 4px; }
+  .ri-name { grid-area: name; } .ri-amt { grid-area: amt; } .ri-bar { grid-area: bar; } .ri-pct { grid-area: pct; }
+}

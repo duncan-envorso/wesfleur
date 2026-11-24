@@ -31,11 +31,9 @@ export default function Tenants() {
         <Link className="btn" href="/tenants/new">Add tenant</Link>
       </div>
 
+      <RentIncome tenants={data.tenants} vacant={vacant} tot={tot} />
+
       <div className="summary">
-        <div className="stat"><span className="meta">Rent billed per month</span><b>{R(tot.monthly)}</b><span className="meta">{R(tot.annual)} a year, excl. VAT</span></div>
-        {tot.expected > tot.monthly + 0.5 && (
-          <div className="stat alert"><span className="meta">If missed increases were applied</span><b>{R(tot.expected)}</b><span className="meta">{R(tot.expected - tot.monthly)} a month more</span></div>
-        )}
         <div className="stat"><span className="meta">Units let</span><b>{tot.occupiedUnits} of {tot.units}</b>
           <span className="meta">{vacant.length ? "Vacant or unconfirmed: " + vacant.map((u) => u.name).join(", ") : "Fully let"}</span></div>
         <div className={"stat" + (attention.some((a) => a.level === "high") ? " alert" : "")}>
@@ -96,5 +94,52 @@ export default function Tenants() {
       </div>
       <p className="meta">Rents are as billed, excluding VAT. Increases are worked out from each lease&apos;s escalation rate and increase date.</p>
     </>
+  );
+}
+
+// The headline: total rent per month (excl. VAT, rent only), with each tenant's share.
+function RentIncome({ tenants, vacant, tot }) {
+  const rows = tenants.filter((t) => t.active && t.lease?.current_rent > 0)
+    .map((t) => ({ id: t.id, name: t.trading_name, unit: t.lease.unit_name, rent: t.lease.current_rent,
+      due: t.lease.state?.missed?.length ? t.lease.state.expectedRent : null }))
+    .sort((a, b) => b.rent - a.rent);
+  const max = rows[0]?.rent || 1;
+  const short = tot.expected - tot.monthly;
+  return (
+    <section className="card rentincome" aria-labelledby="rent-h">
+      <div className="ri-head">
+        <div>
+          <h2 id="rent-h" className="meta ri-label">Rent income per month</h2>
+          <div className="ri-total">{R(tot.monthly)}</div>
+          <div className="meta">{R(tot.annual)} a year · excl. VAT · rent only (no utilities or recoveries) · {rows.length} paying tenant{rows.length === 1 ? "" : "s"}</div>
+        </div>
+        {short > 0.5 && (
+          <div className="ri-short">
+            <span className="meta">Should be, with missed increases</span>
+            <b>{R(tot.expected)}</b>
+            <span className="meta">{R(short)} a month not being billed</span>
+          </div>
+        )}
+      </div>
+      <ul className="ri-list">
+        {rows.map((r) => (
+          <li key={r.id}>
+            <Link href={`/tenants/${r.id}`} className="ri-name"><b>{r.name}</b><span className="meta">{r.unit || "Unit?"}</span></Link>
+            <span className="ri-bar" aria-hidden="true"><span style={{ width: `${Math.max(2, (r.rent / max) * 100)}%` }} /></span>
+            <span className="ri-amt">{R(r.rent)}{r.due && <span className="ri-due">should be {R(r.due)}</span>}</span>
+            <span className="ri-pct meta">{tot.monthly ? Math.round((r.rent / tot.monthly) * 1000) / 10 : 0}%</span>
+          </li>
+        ))}
+        {vacant.map((u) => (
+          <li key={"v" + u.id} className="ri-vacant">
+            <span className="ri-name"><b>{u.name}</b><span className="meta">Vacant or unconfirmed</span></span>
+            <span className="ri-bar" aria-hidden="true" />
+            <span className="ri-amt meta">R0</span>
+            <span className="ri-pct meta">—</span>
+          </li>
+        ))}
+      </ul>
+      <div className="ri-foot"><span>Total per month</span><b>{R(tot.monthly)}</b></div>
+    </section>
   );
 }

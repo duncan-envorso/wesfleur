@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CATEGORIES } from "@/lib/expense-categories";
 import { R, api } from "../tenants/ui";
+const gapCls = (g) => (g < -0.5 ? "neg" : g > 0.5 ? "over" : "");
 
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTH = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -119,9 +120,25 @@ export default function MonthlyCosts() {
                 <tr className="sub"><td>Usage charges</td>{d.totals.map((t) => tcell(t, t.city_use))}</tr>
               </>}
               <tr className="sub"><td><b>City bill total</b></td>{d.totals.map((t) => tcell(t, t.city_total))}</tr>
+
+              {d.recovery.length > 0 && <>
+                <tr className="grp"><td colSpan={d.periods.length + 1}>Charged back to tenants <span className="meta">(invoices + Citiq payout against the City cost. Red: what you carry. Orange +: charged more than the City cost)</span></td></tr>
+                {d.recovery.map((r) => (
+                  <tr key={r.key}><td>{r.name}</td>
+                    {r.cells.map((c) => <td key={c.period} className={"num" + (c.period === d.now ? " now" : "")}>
+                      {c.cost === null ? <span className="meta">—</span> : <>
+                        <span className={gapCls(c.gap)}>{c.gap > 0.5 ? "+" : ""}{R(Math.abs(c.gap))}</span>
+                        <div className="meta tiny">{R(c.recovered)} of {R(c.cost)}</div>
+                      </>}
+                    </td>)}</tr>
+                ))}
+                <tr className="sub"><td>Charged back</td>{d.totals.map((t) => tcell(t, t.recovered))}</tr>
+                <tr className="sub"><td><b>City costs you carry</b><div className="meta tiny">City bill less what&apos;s charged back</div></td>{d.totals.map((t) => <td key={t.period} className={"num" + (t.period === d.now ? " now" : "")}>{t.gap === null ? <span className="meta">no bill</span> : <b className={gapCls(t.gap)}>{R(-t.gap)}</b>}</td>)}</tr>
+              </>}
             </tbody>
             <tfoot>
               <tr><td><b>Total monthly costs</b></td>{d.totals.map((t) => <td key={t.period} className={"num" + (t.period === d.now ? " now" : "")}><b>{R((t.period >= d.now ? Math.max(t.expected, t.paid) : t.paid) + (t.city_total || 0))}</b></td>)}</tr>
+              <tr><td><b>Your net monthly cost</b><div className="meta tiny">Recurring payments + City costs you carry</div></td>{d.totals.map((t) => <td key={t.period} className={"num" + (t.period === d.now ? " now" : "")}><b>{R((t.period >= d.now ? Math.max(t.expected, t.paid) : t.paid) + (t.gap === null ? (t.city_total || 0) : -t.gap))}</b></td>)}</tr>
             </tfoot>
           </table>
         </div>

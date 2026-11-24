@@ -385,3 +385,5 @@ input.empty { border-color: #e9b48f; background: #fffaf6; }
 .costs-grid .cost-name { font-size: 14.5px; line-height: 1.3; }
 .costs-grid td { vertical-align: top; }
 .costs-grid tr.sub2 td { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted, #6b7280); padding-top: 10px; }
+.costs-grid .neg { color: #b42318; font-weight: 600; }
+.costs-grid .over { color: #b54708; font-weight: 600; }

@@ -14,6 +14,7 @@ const ICONS = {
   report: <><path d="M4 20V4M4 20h16" /><path d="M8 16v-4M12 16V8M16 16v-6" /></>,
   settings: <><circle cx="12" cy="12" r="3" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></>,
   payments: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M16 15h2" /></>,
+  costs: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4M7 13h2M11 13h2M15 13h2M7 17h2M11 17h2" /></>,
   expenses: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6M9 16h3" /></>,
   income: <><path d="M12 19V5M6 11l6-6 6 6" /><path d="M5 21h14" /></>,
   pnl: <><path d="M4 19h16" /><path d="M6 16l4-5 3 3 5-7" /></>,
@@ -38,6 +39,7 @@ const SECTIONS = [
     { href: "/payments", label: "Payments", icon: "payments" },
     { href: "/income", label: "Income", icon: "income" },
     { href: "/expenses", label: "Expenses", icon: "expenses" },
+    { href: "/costs", label: "Monthly costs", icon: "costs" },
     { href: "/profit-loss", label: "Profit & loss", icon: "pnl" },
   ] },
   { title: "Utilities", items: [

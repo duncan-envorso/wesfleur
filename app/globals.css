@@ -369,3 +369,18 @@ input.empty { border-color: #e9b48f; background: #fffaf6; }
 .sb-box, .fe-box { container-type: size; }
 .sbt { font-size: clamp(5px, 62cqh, 14px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .fe-box-text { font-size: clamp(5px, 58cqh, 11px); }
+
+/* Monthly costs grid */
+.costs-grid { min-width: 760px; }
+.costs-grid th.now, .costs-grid td.now { background: #f2f8f6; }
+.costs-grid tr.grp td { background: var(--brand-soft); font-weight: 600; font-size: 13px; padding-top: 8px; padding-bottom: 8px; }
+.costs-grid tr.sub td { font-weight: 600; border-top: 1px solid var(--line); }
+.costs-grid tfoot td { border-top: 2px solid var(--ink); }
+.costs-grid tr.inactive td:first-child { opacity: .6; }
+.costs-grid td.cell .pill { font-variant-numeric: tabular-nums; }
+.costs-grid .tiny { font-size: 11.5px; }
+.cost-name { font-weight: 600; text-align: left; padding: 0; }
+
+.costs-grid th:first-child, .costs-grid td:first-child { min-width: 230px; max-width: 280px; }
+.costs-grid .cost-name { font-size: 14.5px; line-height: 1.3; }
+.costs-grid td { vertical-align: top; }

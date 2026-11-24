@@ -170,7 +170,7 @@ export function SigningSettings() {
         <b>Email</b> {d.mail.enabled ? <span className="pill ok">On</span> : <span className="pill">Off</span>}
         {d.mail.enabled
           ? <p className="meta">Sending from {d.mail.from}. Signers get their link and a one-time code by email, and everyone gets the signed copy.</p>
-          : <p className="meta">Off: you copy signing links and send them yourself, and signers aren&apos;t asked for a one-time code. To turn it on: create a free account at resend.com, verify a domain you own (e.g. westfleur.co.za), then add <code>RESEND_API_KEY</code> and <code>MAIL_FROM</code> (e.g. <code>Westfleur Centre &lt;leases@westfleur.co.za&gt;</code>) in Vercel → Settings → Environment Variables, and redeploy.</p>}
+          : <p className="meta">Off: you copy signing links and send them yourself, and signers aren&apos;t asked for a one-time code. To send from Gmail: turn on 2-Step Verification for the Google account, create an app password at myaccount.google.com/apppasswords, then add <code>GMAIL_USER</code> (the Gmail address) and <code>GMAIL_APP_PASSWORD</code> (the 16-letter password) in Vercel → Settings → Environment Variables, and redeploy.</p>}
         {d.mail.enabled && <div className="row" style={{ justifyContent: "flex-start", gap: 8 }}><input type="email" value={to} onChange={(e) => setTo(e.target.value)} placeholder="you@example.com" /><button className="ghost" onClick={test}>Send a test email</button></div>}
       </div>
       <div>

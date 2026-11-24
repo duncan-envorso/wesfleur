@@ -17,6 +17,7 @@
     "@vercel/blob": "^2.8.2",
     "next": "^16.4.6",
     "node-forge": "^1.4.4",
+    "nodemailer": "^10.6.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.5.438",
     "pg": "^8.23.1",

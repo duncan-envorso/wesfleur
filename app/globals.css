@@ -384,3 +384,4 @@ input.empty { border-color: #e9b48f; background: #fffaf6; }
 .costs-grid th:first-child, .costs-grid td:first-child { min-width: 230px; max-width: 280px; }
 .costs-grid .cost-name { font-size: 14.5px; line-height: 1.3; }
 .costs-grid td { vertical-align: top; }
+.costs-grid tr.sub2 td { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted, #6b7280); padding-top: 10px; }

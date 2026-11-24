@@ -38,14 +38,16 @@ export default function MonthlyCosts() {
   const cur = d.totals[ci];
   // Average over past months that have something recorded (payments or a City bill).
   const done = d.totals.filter((t) => t.period < d.now && (t.paid || t.city));
-  const avg = done.length ? done.reduce((s, t) => s + t.paid + (t.city || 0), 0) / done.length : 0;
+  const avg = done.length ? done.reduce((s, t) => s + t.paid + (t.city_total || 0), 0) / done.length : 0;
+  const cell = (x) => <td key={x.period} className={"num" + (x.period === d.now ? " now" : "")}>{x.amount === null ? <span className="meta">—</span> : x.amount ? R(x.amount) : <span className="meta">R0</span>}</td>;
+  const tcell = (t, v) => <td key={t.period} className={"num" + (t.period === d.now ? " now" : "")}>{v === null || v === undefined ? <span className="meta">no bill</span> : R(v)}</td>;
 
   return (
     <>
       <div className="row" style={{ alignItems: "baseline" }}>
         <div>
           <h1>Monthly costs</h1>
-          <p className="meta" style={{ marginTop: -8 }}>Costs that come round every month: what to expect, what&apos;s been paid, and what&apos;s still due. Payments come from your Expenses; City fixed charges from each month&apos;s City bill.</p>
+          <p className="meta" style={{ marginTop: -8 }}>Costs that come round every month: what to expect, what&apos;s been paid, and what&apos;s still due. Payments come from your Expenses; City charges from each month&apos;s City bill.</p>
         </div>
         {!form && <button onClick={() => setForm({ ...BLANK, start_period: d.now })}>Add a recurring cost</button>}
       </div>
@@ -55,9 +57,9 @@ export default function MonthlyCosts() {
           <span className="meta">{R(cur?.paid || 0)} paid so far</span></div>
         <div className={"stat" + (cur?.outstanding ? " alert" : "")}><span className="meta">Still to pay this month</span><b>{R(cur?.outstanding || 0)}</b>
           <span className="meta">{d.due_now.length ? d.due_now.map((x) => `${x.name}${x.due_day ? ` (${ord(x.due_day)})` : ""}`).join(", ") : "Nothing outstanding"}</span></div>
-        <div className="stat"><span className="meta">City fixed charges, {long(d.now)}</span><b>{cur?.city === null || cur?.city === undefined ? "—" : R(cur.city)}</b>
-          <span className="meta">{cur?.city === null || cur?.city === undefined ? "City bill not entered yet" : "Rates, fixed water & sewerage, refuse, electricity service charge"}</span></div>
-        <div className="stat"><span className="meta">Average per month{done.length ? ` (${done.length} month${done.length === 1 ? "" : "s"} with records)` : ""}</span><b>{R(avg)}</b><span className="meta">Paid recurring costs + City fixed charges</span></div>
+        <div className="stat"><span className="meta">City bill, {long(d.now)}</span><b>{cur?.city_total === null || cur?.city_total === undefined ? "—" : R(cur.city_total)}</b>
+          <span className="meta">{cur?.city_total === null || cur?.city_total === undefined ? "City bill not entered yet" : `${R(cur.city)} fixed + ${R(cur.city_use)} usage`}</span></div>
+        <div className="stat"><span className="meta">Average per month{done.length ? ` (${done.length} month${done.length === 1 ? "" : "s"} with records)` : ""}</span><b>{R(avg)}</b><span className="meta">Paid recurring costs + the whole City bill</span></div>
       </div>
 
       {form && <CostForm initial={form} onCancel={() => setForm(null)} onSaved={(m) => { setForm(null); setMsg(m); load(); }} />}
@@ -107,14 +109,19 @@ export default function MonthlyCosts() {
               ))}
               <tr className="sub"><td>Recurring payments: paid</td>{d.totals.map((t) => <td key={t.period} className={"num" + (t.period === d.now ? " now" : "")}>{t.paid ? R(t.paid) : <span className="meta">—</span>}{t.expected && t.period >= d.now ? <div className="meta tiny">of {R(t.expected)}</div> : null}</td>)}</tr>
 
-              <tr className="grp"><td colSpan={d.periods.length + 1}>City fixed charges <span className="meta">(from the City bill, part of your municipal payment)</span></td></tr>
-              {d.city.map((c) => (
-                <tr key={c.key}><td>{c.name}</td>{c.cells.map((x) => <td key={x.period} className={"num" + (x.period === d.now ? " now" : "")}>{x.amount === null ? <span className="meta">—</span> : x.amount ? R(x.amount) : <span className="meta">R0</span>}</td>)}</tr>
-              ))}
-              <tr className="sub"><td>City fixed charges</td>{d.totals.map((t) => <td key={t.period} className={"num" + (t.period === d.now ? " now" : "")}>{t.city === null ? <span className="meta">no bill</span> : R(t.city)}</td>)}</tr>
+              <tr className="grp"><td colSpan={d.periods.length + 1}>City of Cape Town bill <span className="meta">(from each month&apos;s City bill, as charged incl. VAT)</span></td></tr>
+              <tr className="sub2"><td colSpan={d.periods.length + 1}>Fixed charges</td></tr>
+              {d.city.map((c) => <tr key={c.key}><td>{c.name}</td>{c.cells.map(cell)}</tr>)}
+              <tr className="sub"><td>Fixed charges</td>{d.totals.map((t) => tcell(t, t.city))}</tr>
+              {d.city_use.length > 0 && <>
+                <tr className="sub2"><td colSpan={d.periods.length + 1}>Usage charges</td></tr>
+                {d.city_use.map((c) => <tr key={c.key}><td>{c.name}{c.note && <div className="meta tiny">{c.note}</div>}</td>{c.cells.map(cell)}</tr>)}
+                <tr className="sub"><td>Usage charges</td>{d.totals.map((t) => tcell(t, t.city_use))}</tr>
+              </>}
+              <tr className="sub"><td><b>City bill total</b></td>{d.totals.map((t) => tcell(t, t.city_total))}</tr>
             </tbody>
             <tfoot>
-              <tr><td><b>Total fixed costs</b></td>{d.totals.map((t) => <td key={t.period} className={"num" + (t.period === d.now ? " now" : "")}><b>{R((t.period >= d.now ? Math.max(t.expected, t.paid) : t.paid) + (t.city || 0))}</b></td>)}</tr>
+              <tr><td><b>Total monthly costs</b></td>{d.totals.map((t) => <td key={t.period} className={"num" + (t.period === d.now ? " now" : "")}><b>{R((t.period >= d.now ? Math.max(t.expected, t.paid) : t.paid) + (t.city_total || 0))}</b></td>)}</tr>
             </tfoot>
           </table>
         </div>

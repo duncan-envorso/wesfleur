@@ -144,3 +144,51 @@ export function UsersSettings() {
     </section>
   );
 }
+
+export function SigningSettings() {
+  const [d, setD] = useState(null);
+  const [msg, setMsg] = useState("");
+  const [to, setTo] = useState("");
+  const load = () => api("/api/drive").then(setD).catch((e) => setMsg(e.message));
+  useEffect(() => {
+    load();
+    const p = new URLSearchParams(window.location.search).get("drive");
+    if (p) setMsg({ connected: "Google Drive connected.", cancelled: "Drive connection cancelled.", bad_state: "That connection attempt expired. Try again.", not_configured: "Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel first.", failed: "Couldn't connect Drive: " + (new URLSearchParams(window.location.search).get("msg") || "") }[p] || "");
+  }, []);
+  async function test() {
+    setMsg("");
+    try { await api("/api/mail-test", "POST", { to }); setMsg(`Test email sent to ${to}.`); } catch (e) { setMsg(e.message); }
+  }
+  async function disconnect() {
+    try { await api("/api/drive", "DELETE"); setMsg("Google Drive disconnected."); load(); } catch (e) { setMsg(e.message); }
+  }
+  if (!d) return null;
+  return (
+    <section className="card" id="signing">
+      <div className="row"><h2>Lease signing: email and Google Drive</h2>{msg && <span className="meta">{msg}</span>}</div>
+      <div>
+        <b>Email</b> {d.mail.enabled ? <span className="pill ok">On</span> : <span className="pill">Off</span>}
+        {d.mail.enabled
+          ? <p className="meta">Sending from {d.mail.from}. Signers get their link and a one-time code by email, and everyone gets the signed copy.</p>
+          : <p className="meta">Off: you copy signing links and send them yourself, and signers aren&apos;t asked for a one-time code. To turn it on: create a free account at resend.com, verify a domain you own (e.g. westfleur.co.za), then add <code>RESEND_API_KEY</code> and <code>MAIL_FROM</code> (e.g. <code>Westfleur Centre &lt;leases@westfleur.co.za&gt;</code>) in Vercel → Settings → Environment Variables, and redeploy.</p>}
+        {d.mail.enabled && <div className="row" style={{ justifyContent: "flex-start", gap: 8 }}><input type="email" value={to} onChange={(e) => setTo(e.target.value)} placeholder="you@example.com" /><button className="ghost" onClick={test}>Send a test email</button></div>}
+      </div>
+      <div>
+        <b>Google Drive backup</b> {d.drive.connected ? <span className="pill ok">Connected</span> : <span className="pill">Not connected</span>}
+        {d.drive.connected ? (
+          <>
+            <p className="meta">Signed leases are copied to <b>{d.drive.root} / Leases / (tenant)</b> in {d.drive.email || "the connected account"}&apos;s Drive. The app can only see files it created there, not the rest of the Drive.</p>
+            <button className="ghost" onClick={disconnect}>Disconnect</button>
+          </>
+        ) : d.drive.configured ? (
+          <>
+            <p className="meta">Sign in with the Google account whose Drive should hold the copies. The app only gets access to files it creates.</p>
+            <a className="btn" href="/api/drive/connect">Connect Google Drive</a>
+          </>
+        ) : (
+          <p className="meta">Not set up: needs a Google Cloud OAuth client. Add <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code> in Vercel, then come back here to connect. The redirect address to give Google is <code>{typeof window !== "undefined" ? window.location.origin : ""}/api/drive/callback</code>.</p>
+        )}
+      </div>
+    </section>
+  );
+}

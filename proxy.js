@@ -17,6 +17,14 @@ function allowed(role, pathname) {
 export async function proxy(req) {
   const { pathname, search } = req.nextUrl;
   if (PUBLIC.includes(pathname)) return NextResponse.next();
+  // Tenants open their own signing link without an account; the link itself is the key.
+  if (pathname.startsWith("/sign/") || pathname.startsWith("/api/sign/")) {
+    const res = NextResponse.next();
+    res.headers.set("cache-control", "no-store");
+    res.headers.set("referrer-policy", "no-referrer");
+    res.headers.set("x-robots-tag", "noindex");
+    return res;
+  }
 
   const session = await verifyToken(req.cookies.get(COOKIE)?.value);
   const isApi = pathname.startsWith("/api/");

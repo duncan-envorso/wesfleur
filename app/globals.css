@@ -261,3 +261,61 @@ button.ghost.on { background: var(--brand); color: #fff; }
   .ri-list li { grid-template-columns: 1fr 140px; grid-template-areas: "name amt" "bar pct"; row-gap: 4px; }
   .ri-name { grid-area: name; } .ri-amt { grid-area: amt; } .ri-bar { grid-area: bar; } .ri-pct { grid-area: pct; }
 }
+
+/* Lease signing (admin) */
+.setup-note p { margin: 0; font-size: 14px; }
+.formgrid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.formgrid .wide { grid-column: 1 / -1; }
+.signer-row { display: grid; grid-template-columns: 110px 1fr 1fr 1.4fr 32px; gap: 8px; align-items: center; }
+@media (max-width: 760px) { .signer-row { grid-template-columns: 1fr 1fr; } .signer-row > :nth-child(4) { grid-column: 1 / -1; } }
+.signer-list { list-style: none; margin: 0; padding: 0; }
+.signer-list li { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); }
+.signer-list li:first-child { border-top: 0; }
+.signer-main { min-width: 0; flex: 1; }
+.signer-act { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.link-out { width: 100%; margin-top: 6px; font-size: 13px; }
+.audit { list-style: none; margin: 0; padding: 0; font-size: 13.5px; display: grid; gap: 4px; }
+
+/* Lease signing (tenant-facing) */
+.sign-wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 14px; }
+.sign-head { display: flex; gap: 12px; align-items: center; background: var(--brand); color: #fff; padding: 12px 16px; border-radius: var(--radius); }
+.sign-head .meta { color: #cfe3e0; }
+.sign-who { margin: 0; }
+.sign-steps { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; counter-reset: st; }
+.sign-steps li { flex: 1; text-align: center; font-size: 13px; padding: 6px; border-radius: 8px; background: #eef2f1; color: var(--muted); }
+.sign-steps li.on { background: var(--brand); color: #fff; font-weight: 600; }
+.sign-steps li.done { background: #e3f4ea; color: var(--ok); }
+.sign-doc { height: 60vh; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #f7f9f8; }
+.sign-doc iframe { width: 100%; height: 100%; border: 0; }
+@media (max-width: 640px) { .sign-doc { height: 45vh; } }
+.code-input { font-size: 24px; letter-spacing: 6px; width: 170px; text-align: center; font-variant-numeric: tabular-nums; }
+.sigpad { display: grid; gap: 6px; }
+.sigpad-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sigpad-box { position: relative; border: 1px dashed #b9c6c4; border-radius: 10px; background: #fff; touch-action: none; }
+.sigpad-box canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sigpad-hint { position: absolute; inset: 0; display: grid; place-items: center; color: #9aa7a6; pointer-events: none; font-size: 14px; }
+.sigpad-line { position: absolute; left: 16px; right: 16px; bottom: 26%; border-bottom: 1px solid #d5dcdb; pointer-events: none; }
+.sigpad-type { display: grid; gap: 6px; }
+.sigpad-preview { border: 1px dashed #b9c6c4; border-radius: 10px; display: grid; place-items: center; background: #fff; overflow: hidden; }
+.sigpad-preview img { max-height: 90%; max-width: 95%; }
+.seg.small button { padding: 4px 10px; font-size: 13px; }
+.seg button { background: #fff; color: var(--brand); border-color: #d5dcdb; }
+.seg button.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+.sign-agree { align-items: flex-start !important; font-size: 14px; line-height: 1.45; }
+.sign-agree input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+.sign-btn { font-size: 17px; padding: 13px; }
+.sign-decline { font-size: 14px; color: var(--muted); }
+.sign-decline[open] { display: grid; gap: 8px; }
+.sign-decline summary { cursor: pointer; }
+.sign-done h2 { color: var(--ok); }
+.sign-parties { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.sign-parties li { display: flex; justify-content: space-between; }
+.sign-foot { text-align: center; }
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; }
+.seg button:first-child { border-radius: 8px 0 0 8px; }
+.seg button:last-child { border-radius: 0 8px 8px 0; }
+
+.formgrid label > input, .formgrid label > textarea, .formgrid label > select,
+.signer-row > input, .signer-row > select { width: 100%; min-width: 0; box-sizing: border-box; }
+form.card > button.ghost { justify-self: start; }

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { BillingSettings, UnitsSettings, UsersSettings } from "./admin-sections";
+import { BillingSettings, SigningSettings, UnitsSettings, UsersSettings } from "./admin-sections";
 
 const FIELDS = [
   ["water_per_kl", "Water, R per kL (excl. VAT)"],
@@ -101,6 +101,7 @@ export default function Settings() {
       <BillingSettings />
       <UnitsSettings />
       <UsersSettings />
+      <SigningSettings />
     </>
   );
 }

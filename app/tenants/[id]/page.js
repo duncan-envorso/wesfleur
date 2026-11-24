@@ -219,6 +219,30 @@ function EventLog({ tenantId, events, onSaved }) {
 
 // Two-tap delete without a browser dialog.
 let pending = 0;
+function OnlineSigning({ tenantId }) {
+  const [d, setD] = useState(null);
+  useEffect(() => { api(`/api/signing?tenant=${tenantId}`).then(setD).catch(() => {}); }, [tenantId]);
+  return (
+    <section className="card">
+      <div className="row"><h2>Online signing</h2><Link className="btn ghost" href={`/signing?new=1&tenant=${tenantId}`}>Send a lease for signing</Link></div>
+      {!d ? <p className="meta">Loading…</p> : d.requests.length === 0 ? <p className="meta">No leases sent for online signing yet.</p> : (
+        <ul className="signer-list">
+          {d.requests.map((r) => (
+            <li key={r.id}>
+              <div className="signer-main"><Link href={`/signing/${r.id}`}><b>{r.title}</b></Link>
+                <div className="meta">{r.signers.map((s) => `${s.status === "signed" ? "✓" : "○"} ${s.name}`).join("   ")}</div></div>
+              <div className="signer-act">
+                <span className={`pill ${{ completed: "ok", sent: "info", declined: "bad" }[r.status] || ""}`}>{r.status_label}</span>
+                {r.status === "completed" && <a className="btn ghost" href={`/api/signing/${r.id}/file?kind=signed`} target="_blank" rel="noreferrer">Signed PDF</a>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function confirmDelete() {
   const now = Date.now();
   if (now - pending < 3000) { pending = 0; return true; }
@@ -245,6 +269,7 @@ export default function TenantPage({ params }) {
       {tenant.legal_name && tenant.legal_name !== tenant.trading_name && <p className="meta" style={{ marginTop: -8 }}>{tenant.legal_name}{tenant.reg_no ? ` · ${tenant.reg_no}` : ""}</p>}
       <div className="stack">
         {ordered.map((l) => <LeaseCard key={`${l.id}-${l.current_rent}-${l.status}`} lease={l} units={units} onSaved={load} />)}
+        <OnlineSigning tenantId={tenant.id} />
         <NewLease tenantId={tenant.id} units={units} last={ordered[0]} onSaved={load} />
         <TenantDetails key={tenant.id + JSON.stringify(tenant)} tenant={tenant} onSaved={load} />
         <EventLog tenantId={tenant.id} events={events} onSaved={load} />

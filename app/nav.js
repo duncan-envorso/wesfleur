@@ -6,6 +6,7 @@ import { ROLE_LABELS } from "@/lib/session";
 
 // Small stroke icons so the sidebar needs no icon library.
 const ICONS = {
+  sign: <><path d="M14 4h-7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z" /><path d="M14 4v5h5" /><path d="M8 16c1.2-1.6 2-1.6 2.6 0s1.4 1.6 2.4-.4 1.8-1 3 .4" /></>,
   todo: <><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M8 12l3 3 5-6" /></>,
   tenants: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5" /><path d="M16 5.5a3 3 0 0 1 0 5.6M18 14.3c1.6.6 2.6 2.1 3 4.7" /></>,
   invoices: <><path d="M6 3h9l4 4v14H6z" /><path d="M15 3v4h4M9 12h7M9 16h7M9 8h3" /></>,
@@ -30,6 +31,7 @@ const SECTIONS = [
   { title: "Property", items: [
     { href: "/todos", label: "To-do", icon: "todo", manager: true },
     { href: "/tenants", label: "Tenants", icon: "tenants", admin: true },
+    { href: "/signing", label: "Lease signing", icon: "sign", admin: true },
   ] },
   { title: "Money", admin: true, items: [
     { href: "/invoices", label: "Invoices", icon: "invoices" },
@@ -50,11 +52,11 @@ export default function Nav() {
   const [me, setMe] = useState(null);
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    if (path === "/login") return;
+    if (path === "/login" || path.startsWith("/sign/")) return;
     fetch("/api/me", { cache: "no-store" }).then((r) => r.json()).then(setMe).catch(() => {});
   }, [path]);
   useEffect(() => { setOpen(false); }, [path]);
-  if (path === "/login") return null;
+  if (path === "/login" || path.startsWith("/sign/")) return null;
 
   const admin = me?.role === "admin";
   const manager = me?.role === "manager";

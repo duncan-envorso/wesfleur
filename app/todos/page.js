@@ -80,6 +80,22 @@ export default function Todos() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const pending = useRef({ id: null, at: 0 });
+  // Bulk assign: "Select" mode swaps the done ticks for selection ticks.
+  const [selecting, setSelecting] = useState(false);
+  const [sel, setSel] = useState(() => new Set());
+  const [bulkWho, setBulkWho] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const toggleSel = (id) => setSel((o) => { const n = new Set(o); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const stopSelecting = () => { setSelecting(false); setSel(new Set()); setBulkWho(""); };
+  async function bulkAssign(name) {
+    if (!sel.size) return;
+    setBulkBusy(true); setErr("");
+    try {
+      const r = await api("/api/todos/bulk", "POST", { ids: [...sel], assigned_to: name });
+      setMsg(r.assigned_to ? `${r.updated} task${r.updated === 1 ? "" : "s"} assigned to ${r.assigned_to}.` : `${r.updated} task${r.updated === 1 ? "" : "s"} unassigned.`);
+      stopSelecting(); load();
+    } catch (e) { setErr(e.message); } finally { setBulkBusy(false); }
+  }
 
   const load = useCallback(async () => {
     try { setData(await api(`/api/todos?show=${show}&who=${encodeURIComponent(who)}`)); setErr(""); } catch (e) { setErr(e.message); }
@@ -142,6 +158,8 @@ export default function Todos() {
             <button key={k} role="tab" aria-selected={show === k} className={show === k ? "on" : ""} onClick={() => setShow(k)}>{l}</button>
           ))}
         </div>
+        <button type="button" className={"ghost" + (selecting ? " on" : "")} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+          disabled={!data?.rows.length && !selecting}>{selecting ? "Done selecting" : "Select"}</button>
         <label className="todo-who">Assigned to
           <select value={who} onChange={(e) => setWho(e.target.value)}>
             <option value="">Everyone</option>
@@ -152,6 +170,20 @@ export default function Todos() {
         </label>
         {msg && <span className="pill ok">{msg}</span>}
       </div>
+
+      {selecting && data && (
+        <div className="bulkbar" role="region" aria-label="Bulk assign">
+          <span><b>{sel.size}</b> selected</span>
+          <button type="button" className="linkish" onClick={() => setSel(new Set(data.rows.map((r) => r.id)))}>Select all {data.rows.length} shown</button>
+          {sel.size > 0 && <button type="button" className="linkish" onClick={() => setSel(new Set())}>Clear</button>}
+          <form className="bulk-assign" onSubmit={(e) => { e.preventDefault(); if (bulkWho.trim()) bulkAssign(bulkWho); }}>
+            <input list="todo-assignees-bulk" value={bulkWho} onChange={(e) => setBulkWho(e.target.value)} placeholder="Assign to… (pick or type a name)" aria-label="Assign selected tasks to" />
+            <datalist id="todo-assignees-bulk">{assignees.map((a) => <option key={a.name} value={a.name} />)}</datalist>
+            <button disabled={!sel.size || !bulkWho.trim() || bulkBusy}>{bulkBusy ? "Saving…" : "Assign"}</button>
+            <button type="button" className="ghost" disabled={!sel.size || bulkBusy} onClick={() => bulkAssign("")}>Unassign</button>
+          </form>
+        </div>
+      )}
 
       {data && data.rows.length === 0 && (
         <p className="meta">{who
@@ -166,8 +198,11 @@ export default function Todos() {
             <h2 className={key === "overdue" ? "bad-text" : ""}>{label} <span className="meta">{rows.length}</span></h2>
             <ul className="todo-list">
               {rows.map((t) => (
-                <li key={t.id} className={"todo" + (t.done ? " is-done" : "")}>
-                  <input type="checkbox" checked={!!t.done} onChange={() => toggle(t)} aria-label={t.done ? "Mark not done" : "Mark done"} />
+                <li key={t.id} className={"todo" + (t.done ? " is-done" : "") + (selecting && sel.has(t.id) ? " is-selected" : "")}
+                  onClick={selecting ? (e) => { if (!e.target.closest("a,button,input")) toggleSel(t.id); } : undefined}>
+                  {selecting
+                    ? <input type="checkbox" className="sel" checked={sel.has(t.id)} onChange={() => toggleSel(t.id)} aria-label={`Select “${t.title}”`} />
+                    : <input type="checkbox" checked={!!t.done} onChange={() => toggle(t)} aria-label={t.done ? "Mark not done" : "Mark done"} />}
                   <div className="todo-body">
                     <div className="todo-title">{t.title}</div>
                     <div className="todo-meta">

@@ -3,6 +3,11 @@ import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import { api } from "../../tenants/ui";
 import { SetupNotes, when } from "../ui";
+import FieldEditor from "../../pdf/editor";
+import PdfPages from "../../pdf/pages";
+import { kindInfo } from "@/lib/lease-fields";
+
+const COLORS = { tenant: "#2a5bb5", landlord: "#b3541e", other: "#6b3fa0" };
 
 const PILL = { draft: "", sent: "info", completed: "ok", voided: "", declined: "bad" };
 const SIGNER = { waiting: ["Not sent", ""], sent: ["Link sent", "info"], viewed: ["Opened", "info"], signed: ["Signed", "ok"], declined: ["Declined", "bad"] };
@@ -85,6 +90,8 @@ export default function SigningRequest({ params }) {
         {err && <p className="err">{err}</p>}
       </section>
 
+      <Boxes d={d} id={id} onSaved={load} />
+
       <section className="card">
         <h2>Documents</h2>
         <div className="row" style={{ justifyContent: "flex-start", gap: 10, flexWrap: "wrap" }}>
@@ -122,5 +129,48 @@ export default function SigningRequest({ params }) {
         </details>
       )}
     </>
+  );
+}
+
+function Boxes({ d, id, onSaved }) {
+  const r = d.request;
+  const [fields, setFields] = useState(r.fields || []);
+  const [dirty, setDirty] = useState(false);
+  const [open, setOpen] = useState(r.status === "draft" && !(r.fields || []).length);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  const people = d.signers.map((s) => ({ key: s.id, label: s.name, color: COLORS[s.party] || COLORS.other }));
+  const draft = r.status === "draft";
+  const n = (r.fields || []).length;
+
+  async function save() {
+    setErr(""); setMsg("");
+    try { const j = await api(`/api/signing/${id}`, "POST", { action: "fields", fields }); setDirty(false); setMsg(`Saved ${j.count} boxes`); onSaved(); }
+    catch (e) { setErr(e.message); }
+  }
+
+  return (
+    <section className="card">
+      <div className="row">
+        <h2>Signing boxes</h2>
+        <div className="row" style={{ gap: 8 }}>
+          {msg && !dirty && <span className="pill ok">{msg}</span>}
+          {dirty && <span className="pill warn">Unsaved</span>}
+          {draft && open && <button disabled={!dirty} onClick={save}>Save boxes</button>}
+          <button className="ghost" onClick={() => setOpen((o) => !o)}>{open ? "Hide the lease" : draft ? (n ? "Check or change boxes" : "Place boxes") : "View the lease with boxes"}</button>
+        </div>
+      </div>
+      <p className="meta">
+        {n ? `${n} boxes: ${people.map((p) => `${p.label} ${(r.fields || []).filter((f) => f.signer_id === p.key).length}`).join(", ")}.` : "No boxes placed: signers initial the foot of every page and sign a page added at the end."}
+        {draft ? " Boxes can be changed until the lease is sent (emailing or copying a link sends it)." : ""}
+      </p>
+      {err && <p className="err">{err}</p>}
+      {open && (draft
+        ? <FieldEditor url={`/api/signing/${id}/file`} fields={fields} onChange={(f) => { setFields(f); setDirty(true); }} whoKey="signer_id" people={people} />
+        : <PdfPages url={`/api/signing/${id}/file`} overlay={(page) => (r.fields || []).filter((f) => f.page === page).map((f) => {
+            const p = people.find((x) => x.key === f.signer_id);
+            return <div key={f.id} className="fe-box ro" style={{ left: `${f.x * 100}%`, top: `${f.y * 100}%`, width: `${f.w * 100}%`, height: `${f.h * 100}%`, "--c": p?.color }}><span className="fe-box-text">{kindInfo(f.kind).label}<em> · {p?.label}</em></span></div>;
+          })} />)}
+    </section>
   );
 }

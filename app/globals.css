@@ -319,3 +319,53 @@ button.ghost.on { background: var(--brand); color: #fff; }
 .formgrid label > input, .formgrid label > textarea, .formgrid label > select,
 .signer-row > input, .signer-row > select { width: 100%; min-width: 0; box-sizing: border-box; }
 form.card > button.ghost { justify-self: start; }
+
+/* PDF pages + boxes */
+.pdfpages { display: grid; gap: 14px; margin: 0 auto; width: 100%; }
+.pdfpage { position: relative; width: 100%; background: #fff; box-shadow: 0 1px 4px rgba(16, 40, 40, .16); border-radius: 2px; overflow: hidden; }
+.pdfpage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pdfpage-layer { position: absolute; inset: 0; }
+.pdfpage-no { position: absolute; right: 6px; top: 4px; font-size: 11px; color: #9aa7a6; pointer-events: none; }
+.fe { display: grid; gap: 12px; }
+.fe-bar { position: sticky; top: 0; z-index: 6; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; display: grid; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.05); }
+.fe-row { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.fe-tool { background: #fff; color: var(--brand); border-color: #d5dcdb; padding: 6px 11px; font-size: 13.5px; }
+.fe-tool.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+.fe-tool.data.on { background: #0f7a55; border-color: #0f7a55; }
+.fe-inline { display: flex !important; flex-direction: row; align-items: center; gap: 6px; }
+.fe-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: -1px; }
+.fe-sel { background: var(--brand-soft); border-radius: 8px; padding: 6px 8px; }
+.fe-sel input, .fe-sel select { padding: 5px 8px; font-size: 13.5px; }
+button.small, .btn.small { padding: 5px 10px; font-size: 13px; }
+.fe-box { position: absolute; border: 1.5px solid var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); border-radius: 3px; cursor: move; touch-action: none; display: flex; align-items: center; overflow: hidden; }
+.fe-box.sel { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--c); z-index: 2; }
+.fe-box.ro { cursor: default; }
+.fe-box-text { font-size: 10px; line-height: 1.1; color: var(--c); padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; font-weight: 600; }
+.fe-box-text em { font-style: normal; font-weight: 400; opacity: .8; }
+.fe-handle { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; background: var(--c); cursor: nwse-resize; border-radius: 2px 0 2px 0; }
+.title-input { font-size: 22px; font-weight: 700; flex: 1; min-width: 260px; }
+.help ol { margin: 6px 0 0; padding-left: 20px; font-size: 14px; display: grid; gap: 6px; }
+input.empty { border-color: #e9b48f; background: #fffaf6; }
+
+/* Signing on the lease */
+.sign-wrap.wide { max-width: 1000px; }
+.sign-progress { position: sticky; top: 0; z-index: 8; display: flex; gap: 12px; align-items: center; background: var(--brand); color: #fff; padding: 10px 14px; border-radius: var(--radius); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+.sign-progress-bar { flex: 1; height: 8px; background: rgba(255,255,255,.2); border-radius: 4px; overflow: hidden; }
+.sign-progress-bar span { display: block; height: 100%; background: #7fd1c3; transition: width .2s; }
+.sign-progress button { background: #fff; color: var(--brand); border-color: #fff; }
+.sb-box { position: absolute; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 3px; font-size: 11px; padding: 0 2px; line-height: 1.1; }
+.sb-box.other { border: 1px dashed #b9c6c4; color: #8a9796; background: rgba(240, 244, 243, .7); pointer-events: none; }
+.sb-box.other span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-box.mine { border: 2px solid #e0a800; background: rgba(255, 214, 51, .35); color: #5c4400; font-weight: 600; cursor: pointer; animation: sbpulse 2s ease-in-out infinite; }
+.sb-box.mine.done { animation: none; border-color: #1a7f4b; background: rgba(26, 127, 75, .07); color: #0b1f4d; font-weight: 500; }
+.sb-box.mine.auto { cursor: default; }
+.sb-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+@keyframes sbpulse { 50% { background: rgba(255, 214, 51, .6); } }
+.modal { position: fixed; inset: 0; z-index: 50; background: rgba(10, 25, 25, .5); display: grid; place-items: center; padding: 14px; }
+.modal-card { background: #fff; border-radius: 14px; padding: 18px; width: 100%; max-width: 560px; display: grid; gap: 12px; max-height: 92vh; overflow: auto; }
+.modal-card h2 { margin: 0; }
+
+/* Text inside boxes scales with the box, so small boxes on a phone stay readable and on one line. */
+.sb-box, .fe-box { container-type: size; }
+.sbt { font-size: clamp(5px, 62cqh, 14px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.fe-box-text { font-size: clamp(5px, 58cqh, 11px); }

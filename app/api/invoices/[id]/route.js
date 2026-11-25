@@ -1,5 +1,5 @@
 import { currentUser, handle } from "@/lib/api";
-import { creditNote, deleteDraft, getInvoice, issueInvoice, refreshDraft, updateDraft } from "@/lib/billing";
+import { creditNote, deleteDraft, getInvoice, issueInvoice, refreshDraft, unissueInvoice, updateDraft } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -13,5 +13,6 @@ export const POST = handle(async (req, { params }) => {
   if (action === "issue") return { number: await issueInvoice(id, user) };
   if (action === "credit") return { number: await creditNote(id, { reason, user }) };
   if (action === "refresh") return refreshDraft(id);
+  if (action === "unissue") return unissueInvoice(id);
   throw new Error("Unknown action");
 });

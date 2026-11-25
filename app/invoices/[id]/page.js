@@ -98,6 +98,13 @@ export default function InvoicePage({ params }) {
     const r = await api(`/api/invoices/${id}`, "POST", { action: "credit", reason }); await load(); setMsg(`Credit note ${r.number} issued. Prepare a corrected invoice from the Invoices page.`);
   });
 
+  const unissue = () => run("Putting back to draft…", async () => {
+    if (confirm !== "unissue") { setConfirm("unissue"); return; }
+    setConfirm("");
+    await api(`/api/invoices/${id}`, "POST", { action: "unissue" }); await load(); setMsg("Back to draft. It keeps its number when you issue it again.");
+  });
+  const recent = inv?.issued_at && Date.now() - new Date(inv.issued_at).getTime() < 7 * 86400000;
+
   if (err && !inv) return <p className="err">{err}</p>;
   if (!inv) return <p className="meta">Loading…</p>;
   const draft = inv.status === "draft";
@@ -155,6 +162,11 @@ export default function InvoicePage({ params }) {
               {msg && <p className="pill ok" style={{ justifySelf: "start" }}>{msg}</p>}
               <div className="row wrap">
                 <a className="btn" href={`/api/invoices/${id}/pdf?download=1`}>Download PDF</a>
+                {inv.kind === "invoice" && !inv.credited_by && recent && (
+                  <button className={confirm === "unissue" ? "danger" : "ghost"} onClick={unissue} disabled={!!busy}>
+                    {confirm === "unissue" ? "Tap again: only if it hasn't been sent" : "Back to draft"}
+                  </button>
+                )}
                 {inv.kind === "invoice" && !inv.credited_by && (
                   <>
                     <input placeholder="Reason for credit note" value={reason} onChange={(e) => setReason(e.target.value)} />
@@ -162,7 +174,7 @@ export default function InvoicePage({ params }) {
                   </>
                 )}
               </div>
-              <p className="meta">Issued invoices are locked. To correct one, credit it and prepare a new invoice for the month.</p>
+              <p className="meta">Issued invoices are locked. Issued by mistake and not sent yet? Use <b>Back to draft</b> (within 7 days). Otherwise credit it and prepare a new invoice for the month.</p>
             </>
           )}
         </section>

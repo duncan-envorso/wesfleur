@@ -11,6 +11,7 @@ const ICONS = {
   tenants: <><circle cx="9" cy="8" r="3.2" /><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5" /><path d="M16 5.5a3 3 0 0 1 0 5.6M18 14.3c1.6.6 2.6 2.1 3 4.7" /></>,
   invoices: <><path d="M6 3h9l4 4v14H6z" /><path d="M15 3v4h4M9 12h7M9 16h7M9 8h3" /></>,
   meters: <><circle cx="12" cy="13" r="8" /><path d="M12 13l4-4M8 17h8" /></>,
+  water: <path d="M12 3.5c3.2 4 5.5 7.2 5.5 10a5.5 5.5 0 0 1-11 0c0-2.8 2.3-6 5.5-10z" />,
   report: <><path d="M4 20V4M4 20h16" /><path d="M8 16v-4M12 16V8M16 16v-6" /></>,
   settings: <><circle cx="12" cy="12" r="3" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></>,
   payments: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M16 15h2" /></>,
@@ -45,6 +46,7 @@ const SECTIONS = [
   { title: "Utilities", items: [
     { href: "/", label: "Meter readings", icon: "meters" },
     { href: "/report", label: "Meter report", icon: "report", admin: true },
+    { href: "/water-usage", label: "Water by tenant", icon: "water", admin: true },
   ] },
   { title: "Admin", admin: true, items: [{ href: "/settings", label: "Settings", icon: "settings" }] },
 ];
